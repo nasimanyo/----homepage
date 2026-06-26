@@ -6,6 +6,14 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Home, CalendarDays, Info, User } from 'lucide-react'
 
+const PAGE_LABELS: Record<string, string> = {
+  '/home': 'ホーム',
+  '/schedule': '予定',
+  '/info': '情報',
+  '/mypage': 'マイページ',
+  '/login': 'ログイン',
+}
+
 const NAV_ITEMS = [
   { href: '/home', label: 'つくほーむ', icon: Home },
   { href: '/schedule', label: '予定', icon: CalendarDays },
@@ -42,9 +50,20 @@ function BottomNav() {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
   useEffect(() => {
     document.title = 'つくほーむ'
-  }, [])
+
+    if (typeof window === 'undefined') return
+
+    const stored = window.localStorage.getItem('recent-pages')
+    const pages = stored ? JSON.parse(stored) : []
+    const nextPage = { href: pathname, label: PAGE_LABELS[pathname] || 'ページ' }
+    const filtered = (pages as Array<{ href: string; label: string }>).filter((page) => page.href !== nextPage.href)
+    const updated = [nextPage, ...filtered].slice(0, 5)
+    window.localStorage.setItem('recent-pages', JSON.stringify(updated))
+  }, [pathname])
 
   return (
     <html lang="ja">

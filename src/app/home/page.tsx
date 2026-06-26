@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Announcement } from '@/types'
+import { Announcement, Poll } from '@/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { ArrowRight, Bell, CalendarDays, Info, Loader2, Sparkles } from 'lucide-react'
+import { ArrowRight, Bell, BellRing, CalendarDays, Heart, Info, Loader2, Sparkles } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 const kindConfig = {
@@ -31,13 +32,79 @@ const QUICK_LINKS = [
   },
 ]
 
+const RECOMMENDED_ACTIONS = [
+  {
+    href: '/schedule',
+    title: '予定を確認する',
+    description: '今週の参加状況をすぐチェック',
+    icon: CalendarDays,
+    color: 'bg-violet-50 text-violet-600',
+  },
+  {
+    href: '/info',
+    title: '情報を見返す',
+    description: '大切な案内や連絡を確認',
+    icon: Info,
+    color: 'bg-blue-50 text-blue-600',
+  },
+  {
+    href: '/home',
+    title: 'メモを残す',
+    description: '気づいたことをすぐ保存',
+    icon: Sparkles,
+    color: 'bg-amber-50 text-amber-600',
+  },
+]
+
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [memo, setMemo] = useState('')
+  const [memoSaved, setMemoSaved] = useState(false)
+  const [recentPages, setRecentPages] = useState<Array<{ href: string; label: string }>>([])
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>('default')
+  const [countdown, setCountdown] = useState<{ title: string; dateLabel: string; remaining: string } | null>(null)
+  const hasLoadedAnnouncementsRef = useRef(false)
+  const lastNotifiedIdsRef = useRef<string[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     fetchAnnouncements()
+    loadCountdown()
+
+    const savedMemo = window.localStorage.getItem('home-memo')
+    if (savedMemo) {
+      setMemo(savedMemo)
+    }
+
+    const storedRecentPages = window.localStorage.getItem('recent-pages')
+    if (storedRecentPages) {
+      try {
+        const parsed = JSON.parse(storedRecentPages) as Array<{ href: string; label: string }>
+        setRecentPages(parsed.filter((page) => page.href !== '/home'))
+      } catch {
+        setRecentPages([])
+      }
+    }
+
+    const storedFavorites = window.localStorage.getItem('home-favorites')
+    if (storedFavorites) {
+      try {
+        setFavorites(JSON.parse(storedFavorites) as string[])
+      } catch {
+        setFavorites([])
+      }
+    }
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email || null)
+    })
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(window.Notification.permission)
+    }
 
     const channel = supabase
       .channel('announcements')
@@ -55,8 +122,86 @@ export default function HomePage() {
       .select('*, profiles(display_name)')
       .order('created_at', { ascending: false })
       .limit(20)
-    setAnnouncements((data as Announcement[]) || [])
+
+    const nextAnnouncements = (data as Announcement[]) || []
+    setAnnouncements(nextAnnouncements)
     setLoading(false)
+
+    if (hasLoadedAnnouncementsRef.current && notificationPermission === 'granted' && nextAnnouncements.length > 0) {
+      const latest = nextAnnouncements[0]
+      if (!lastNotifiedIdsRef.current.includes(String(latest.id))) {
+        new Notification('新しいお知らせ', {
+          body: latest.title,
+          icon: '/favicon.ico',
+        })
+        lastNotifiedIdsRef.current = [String(latest.id), ...lastNotifiedIdsRef.current].slice(0, 5)
+      }
+    }
+
+    hasLoadedAnnouncementsRef.current = true
+  }
+
+  async function loadCountdown() {
+    const { data } = await supabase
+      .from('polls')
+      .select('*, poll_options(id, candidate_date)')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+
+    const polls = (data as Poll[]) || []
+    const candidates = polls.flatMap((poll) => (poll.poll_options || []).map((option) => ({
+      title: poll.title,
+      candidateDate: option.candidate_date,
+    })))
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const upcoming = candidates
+      .filter((candidate) => new Date(`${candidate.candidateDate}T00:00:00`) >= today)
+      .sort((a, b) => new Date(`${a.candidateDate}T00:00:00`).getTime() - new Date(`${b.candidateDate}T00:00:00`).getTime())
+
+    if (upcoming.length > 0) {
+      const target = new Date(`${upcoming[0].candidateDate}T00:00:00`)
+      const diffDays = Math.ceil((target.getTime() - today.getTime()) / 86400000)
+      const remaining = diffDays === 0 ? '今日です' : diffDays === 1 ? '明日' : `${diffDays}日後`
+      setCountdown({
+        title: upcoming[0].title,
+        dateLabel: `${target.getMonth() + 1}/${target.getDate()}`,
+        remaining,
+      })
+    } else {
+      setCountdown(null)
+    }
+  }
+
+  async function requestNotifications() {
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+
+    const permission = await window.Notification.requestPermission()
+    setNotificationPermission(permission)
+
+    if (permission === 'granted') {
+      new Notification('通知を受け取れるようになりました', {
+        body: userEmail ? `${userEmail} に届くように準備しました。` : '新しい情報をすぐお知らせします。',
+        icon: '/favicon.ico',
+      })
+    }
+  }
+
+  function saveMemo() {
+    window.localStorage.setItem('home-memo', memo)
+    setMemoSaved(true)
+    window.setTimeout(() => setMemoSaved(false), 1600)
+  }
+
+  function toggleFavorite(id: string) {
+    const next = favorites.includes(id)
+      ? favorites.filter((favoriteId) => favoriteId !== id)
+      : [...favorites, id]
+
+    setFavorites(next)
+    window.localStorage.setItem('home-favorites', JSON.stringify(next))
   }
 
   return (
@@ -68,7 +213,7 @@ export default function HomePage() {
             <h1 className="text-xl font-bold text-gray-900">つくほーむ</h1>
           </div>
           <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-            <Sparkles size={18} />
+            <Image src="/favicon.ico" alt="つくほーむのアイコン" width={20} height={20} />
           </div>
         </div>
         <p className="mt-2 text-sm text-gray-500">今日の情報と予定をひと目で確認できます。</p>
@@ -82,7 +227,7 @@ export default function HomePage() {
               <h2 className="mt-1 text-lg font-semibold leading-snug">気になる情報をすぐに確認しよう</h2>
             </div>
             <div className="rounded-full bg-white/20 p-2">
-              <Sparkles size={18} />
+              <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
             </div>
           </div>
 
@@ -103,6 +248,191 @@ export default function HomePage() {
                 <p className="mt-1 text-xs leading-5 text-white/80">{description}</p>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="rounded-full bg-violet-50 p-2">
+                <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">今日のおすすめ</p>
+                <p className="text-xs text-gray-500">迷ったらこの3つから始めよう</p>
+              </div>
+            </div>
+            <div className="rounded-full bg-amber-50 p-2 text-amber-600">
+              <Sparkles size={16} />
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {RECOMMENDED_ACTIONS.map(({ href, title, description, icon: Icon, color }) => (
+              <Link key={title} href={href} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3">
+                <div className="flex items-center gap-2">
+                  <div className={`rounded-full p-2 ${color}`}>
+                    <Icon size={15} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{title}</p>
+                    <p className="text-xs text-gray-500">{description}</p>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-gray-400" />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">最近見たページ</p>
+              <p className="text-xs text-gray-500">すぐ戻れるように整理しておきます</p>
+            </div>
+            <div className="rounded-full bg-violet-50 p-2 text-violet-600">
+              <CalendarDays size={16} />
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {recentPages.length > 0 ? (
+              recentPages.map((page) => (
+                <Link key={page.href} href={page.href} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                  <span className="text-sm font-medium text-gray-700">{page.label}</span>
+                  <ArrowRight size={15} className="text-gray-400" />
+                </Link>
+              ))
+            ) : (
+              <p className="rounded-2xl bg-gray-50 px-3 py-3 text-sm text-gray-500">まだ履歴がありません。ページを開くとここに表示されます。</p>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">通知と予定</p>
+              <p className="text-xs text-gray-500">今すぐ気になる内容を見逃しません</p>
+            </div>
+            <div className="rounded-full bg-violet-50 p-2 text-violet-600">
+              <BellRing size={16} />
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">プッシュ通知</p>
+                <p className="text-xs text-gray-500">{userEmail ? `通知先: ${userEmail}` : 'ログイン中のメールを利用します'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={requestNotifications}
+                className="rounded-full bg-violet-600 px-3 py-2 text-sm font-semibold text-white"
+              >
+                {notificationPermission === 'granted' ? '有効中' : '許可する'}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {notificationPermission === 'granted'
+                ? 'お知らせが来たらこの端末ですぐ通知します。'
+                : 'ブラウザの通知を許可すると、重要な情報をすぐ届けられます。'}
+            </p>
+          </div>
+
+          <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">次の予定まで</p>
+                <p className="text-xs text-gray-500">今後の候補日をひと目で確認</p>
+              </div>
+              <div className="rounded-full bg-white p-2 text-amber-600">
+                <CalendarDays size={16} />
+              </div>
+            </div>
+            {countdown ? (
+              <div className="mt-2">
+                <p className="text-sm font-semibold text-gray-800">{countdown.title}</p>
+                <p className="text-xs text-gray-500">{countdown.dateLabel}・{countdown.remaining}</p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">まだ予定候補がありません。</p>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">お気に入り</p>
+              <p className="text-xs text-gray-500">大事な情報だけをすぐ見られます</p>
+            </div>
+            <div className="rounded-full bg-rose-50 p-2 text-rose-500">
+              <Heart size={16} />
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2">
+            {favorites.length > 0 ? (
+              announcements
+                .filter((announcement) => favorites.includes(String(announcement.id)))
+                .slice(0, 3)
+                .map((announcement) => {
+                  const cfg = kindConfig[announcement.kind] || kindConfig.info
+                  const Icon = cfg.icon
+                  return (
+                    <div key={announcement.id} className="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
+                          <div className={`rounded-2xl p-2 ${cfg.color}`}>
+                            <Icon size={16} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">{announcement.title}</p>
+                            <p className="text-xs text-gray-500">{announcement.body?.slice(0, 36) || '内容を確認しましょう'}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(String(announcement.id))}
+                          className="rounded-full bg-white p-1.5 text-rose-500"
+                        >
+                          <Heart size={15} fill="currentColor" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+            ) : (
+              <p className="rounded-2xl bg-gray-50 px-3 py-3 text-sm text-gray-500">気になるお知らせをハートで保存できます。</p>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="rounded-full bg-violet-50 p-2">
+              <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">ひとことメモ</p>
+              <p className="text-xs text-gray-500">大事なことをすぐ残せます</p>
+            </div>
+          </div>
+          <textarea
+            value={memo}
+            onChange={(event) => setMemo(event.target.value)}
+            placeholder="今日の予定や気づきをメモしておこう"
+            className="mt-3 min-h-24 w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none ring-0 placeholder:text-gray-400"
+          />
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-gray-400">{memoSaved ? '保存しました' : '端末に保存されます'}</p>
+            <button
+              type="button"
+              onClick={saveMemo}
+              className="rounded-full bg-violet-600 px-3 py-2 text-sm font-semibold text-white"
+            >
+              保存
+            </button>
           </div>
         </section>
 
@@ -142,6 +472,13 @@ export default function HomePage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] font-semibold tracking-[0.18em] text-gray-400">{cfg.label}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(String(a.id))}
+                          className={`rounded-full p-1.5 ${favorites.includes(String(a.id)) ? 'bg-rose-50 text-rose-500' : 'bg-gray-100 text-gray-400'}`}
+                        >
+                          <Heart size={14} fill={favorites.includes(String(a.id)) ? 'currentColor' : 'none'} />
+                        </button>
                       </div>
                       <p className="mt-1 text-sm font-semibold text-gray-800">{a.title}</p>
                       {a.body && <p className="mt-1 text-sm leading-6 text-gray-600">{a.body}</p>}
