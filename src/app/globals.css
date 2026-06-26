@@ -4,6 +4,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  background-color: #f8fafc;
+}
+
 body {
   overscroll-behavior: none;
+  color: #111827;
+  font-family: Arial, "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
