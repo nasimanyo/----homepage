@@ -11,9 +11,14 @@ import { ja } from 'date-fns/locale'
 export default function SchedulePage() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     supabase
       .from('polls')
       .select('*, poll_options(id)')
@@ -22,7 +27,7 @@ export default function SchedulePage() {
         setPolls((data as Poll[]) || [])
         setLoading(false)
       })
-  }, [])
+  }, [supabase])
 
   const open = polls.filter(p => p.status === 'open')
   const closed = polls.filter(p => p.status === 'closed')

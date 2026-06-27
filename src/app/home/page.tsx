@@ -68,9 +68,11 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState<{ title: string; dateLabel: string; remaining: string } | null>(null)
   const hasLoadedAnnouncementsRef = useRef(false)
   const lastNotifiedIdsRef = useRef<string[]>([])
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   useEffect(() => {
+    if (!supabase) return
+
     fetchAnnouncements()
     loadCountdown()
 
@@ -117,6 +119,8 @@ export default function HomePage() {
   }, [])
 
   async function fetchAnnouncements() {
+    if (!supabase) return
+
     const { data } = await supabase
       .from('announcements')
       .select('*, profiles(display_name)')
@@ -142,6 +146,8 @@ export default function HomePage() {
   }
 
   async function loadCountdown() {
+    if (!supabase) return
+
     const { data } = await supabase
       .from('polls')
       .select('*, poll_options(id, candidate_date)')
@@ -206,32 +212,32 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.14),_transparent_50%)]">
-      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/90 px-4 py-4 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/90 px-3 py-4 backdrop-blur sm:px-6 sm:py-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-violet-500">つくたべホーム</p>
-            <h1 className="text-xl font-bold text-gray-900">つくほーむ</h1>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">つくほーむ</h1>
           </div>
           <div className="rounded-full bg-violet-50 p-2 text-violet-600">
             <Image src="/favicon.ico" alt="つくほーむのアイコン" width={20} height={20} />
           </div>
         </div>
-        <p className="mt-2 text-sm text-gray-500">今日の情報と予定をひと目で確認できます。</p>
+        <p className="mt-2 text-sm leading-6 text-gray-500 sm:text-base">今日の情報と予定をひと目で確認できます。</p>
       </header>
 
-      <main className="space-y-4 px-4 py-4">
-        <section className="rounded-[24px] bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-500 p-4 text-white shadow-lg">
+      <main className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
+        <section className="rounded-[24px] bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-500 p-4 text-white shadow-lg sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">みんなのコミュニティ</p>
-              <h2 className="mt-1 text-lg font-semibold leading-snug">気になる情報をすぐに確認しよう</h2>
+              <h2 className="mt-1 text-xl font-semibold leading-snug sm:text-2xl">気になる情報をすぐに確認しよう</h2>
             </div>
             <div className="rounded-full bg-white/20 p-2">
               <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {QUICK_LINKS.map(({ href, label, description, icon: Icon, accent }) => (
               <Link
                 key={href}
@@ -244,8 +250,8 @@ export default function HomePage() {
                   </div>
                   <ArrowRight size={16} />
                 </div>
-                <p className="mt-3 text-sm font-semibold">{label}</p>
-                <p className="mt-1 text-xs leading-5 text-white/80">{description}</p>
+                <p className="mt-3 text-sm font-semibold sm:text-base">{label}</p>
+                <p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">{description}</p>
               </Link>
             ))}
           </div>

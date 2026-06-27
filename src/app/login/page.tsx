@@ -15,11 +15,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   async function handleSubmit() {
     setError('')
     setLoading(true)
+
+    if (!supabase) {
+      setError('通信環境の準備ができていません');
+      setLoading(false)
+      return
+    }
 
     if (mode === 'signup') {
       if (!displayName.trim()) { setError('表示名を入力してください'); setLoading(false); return }

@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Vercel deployment optimizations
+  turbopack: {
+    root: __dirname,
+  },
 }
 
 export default nextConfig

@@ -12,7 +12,7 @@ type Tab = 'polls' | 'announce'
 
 export default function AdminPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
   const [authorized, setAuthorized] = useState(false)
   const [tab, setTab] = useState<Tab>('polls')
   const [polls, setPolls] = useState<Poll[]>([])
@@ -34,6 +34,7 @@ export default function AdminPage() {
   }, [])
 
   async function checkAdmin() {
+    if (!supabase) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
     const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
@@ -43,13 +44,14 @@ export default function AdminPage() {
   }
 
   async function fetchPolls() {
+    if (!supabase) return
     const { data } = await supabase.from('polls').select('*').order('created_at', { ascending: false })
     setPolls((data as Poll[]) || [])
     setLoading(false)
   }
 
   async function createPoll() {
-    if (!pollTitle.trim()) return
+    if (!pollTitle.trim() || !supabase) return
     const validDates = candidateDates.filter(d => d.trim())
     if (validDates.length === 0) return
     setCreatingPoll(true)
@@ -82,6 +84,7 @@ export default function AdminPage() {
   }
 
   async function closePoll(pollId: string, decidedDate: string) {
+    if (!supabase) return
     await supabase.from('polls').update({ status: 'closed', decided_at: decidedDate }).eq('id', pollId)
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('announcements').insert({
@@ -93,13 +96,13 @@ export default function AdminPage() {
   }
 
   async function deletePoll(pollId: string) {
-    if (!confirm('この予定合わせを削除しますか？')) return
+    if (!confirm('この予定合わせを削除しますか？') || !supabase) return
     await supabase.from('polls').delete().eq('id', pollId)
     await fetchPolls()
   }
 
   async function createAnnouncement() {
-    if (!annTitle.trim()) return
+    if (!annTitle.trim() || !supabase) return
     setCreatingAnn(true)
     const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('announcements').insert({
@@ -175,7 +178,7 @@ export default function AdminPage() {
                   <p className="text-xs text-gray-500 mb-1.5 font-medium">候補日</p>
                   <div className="space-y-1.5">
                     {candidateDates.map((d, i) => (
-                      <div key={i} className="flex gap-2 items-center">
+                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <input
                           type="date"
                           value={d}

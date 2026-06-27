@@ -13,9 +13,15 @@ export default function MyPage() {
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      router.push('/login')
+      return
+    }
+
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -23,10 +29,10 @@ export default function MyPage() {
       setEditName(data?.display_name || '')
       setLoading(false)
     })
-  }, [])
+  }, [router, supabase])
 
   async function saveName() {
-    if (!profile || !editName.trim()) return
+    if (!profile || !editName.trim() || !supabase) return
     setSaving(true)
     await supabase.from('profiles').update({ display_name: editName }).eq('id', profile.id)
     setProfile(p => p ? { ...p, display_name: editName } : p)
@@ -34,6 +40,7 @@ export default function MyPage() {
   }
 
   async function handleLogout() {
+    if (!supabase) return
     await supabase.auth.signOut()
     router.push('/login')
   }
@@ -69,7 +76,7 @@ export default function MyPage() {
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <Settings size={15} /> 表示名を変更
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={editName}

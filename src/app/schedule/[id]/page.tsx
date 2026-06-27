@@ -19,7 +19,7 @@ const answerConfig = {
 export default function PollDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   const [poll, setPoll] = useState<Poll | null>(null)
   const [options, setOptions] = useState<PollOption[]>([])
@@ -35,6 +35,8 @@ export default function PollDetailPage() {
   }, [id])
 
   async function init() {
+    if (!supabase) return
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
     setUserId(user.id)
@@ -70,7 +72,7 @@ export default function PollDetailPage() {
   }
 
   async function submitVotes() {
-    if (!userId) return
+    if (!userId || !supabase) return
     setSaving(true)
     for (const [optionId, answer] of Object.entries(myVotes)) {
       await supabase.from('votes').upsert(

@@ -19,11 +19,13 @@ export default function InfoPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', kind: 'memo', url: '' })
   const [submitting, setSubmitting] = useState(false)
-  const supabase = createClient()
+  const supabase = typeof window === 'undefined' ? null : createClient()
 
   useEffect(() => { fetchPosts() }, [])
 
   async function fetchPosts() {
+    if (!supabase) return
+
     const { data } = await supabase
       .from('info_posts')
       .select('*, profiles(display_name)')
@@ -33,7 +35,7 @@ export default function InfoPage() {
   }
 
   async function handleSubmit() {
-    if (!form.title.trim()) return
+    if (!form.title.trim() || !supabase) return
     setSubmitting(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSubmitting(false); return }
@@ -71,7 +73,7 @@ export default function InfoPage() {
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-violet-100">
             <h3 className="font-semibold text-sm text-gray-700 mb-3">新しい情報を追加</h3>
             <div className="space-y-2.5">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(['memo', 'place', 'link'] as const).map(k => {
                   const cfg = kindConfig[k]
                   const Icon = cfg.icon
@@ -112,7 +114,7 @@ export default function InfoPage() {
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400"
                 />
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-xl border border-gray-200 text-sm text-gray-500">
                   キャンセル
                 </button>
