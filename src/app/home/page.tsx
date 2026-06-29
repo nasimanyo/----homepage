@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Announcement, Poll } from '@/types'
+import { Announcement, Poll, Profile } from '@/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ArrowRight, Bell, BellRing, CalendarDays, Heart, Info, Loader2, Sparkles } from 'lucide-react'
@@ -59,6 +59,10 @@ const RECOMMENDED_ACTIONS = [
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [rouletteLoading, setRouletteLoading] = useState(false)
+  const [pointNotice, setPointNotice] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
   const [memoSaved, setMemoSaved] = useState(false)
   const [recentPages, setRecentPages] = useState<Array<{ href: string; label: string }>>([])
@@ -100,8 +104,20 @@ export default function HomePage() {
       }
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUserEmail(user?.email || null)
+      if (!user) return
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileData) {
+        setProfile(profileData)
+      }
+      setProfileLoading(false)
     })
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -195,6 +211,29 @@ export default function HomePage() {
     }
   }
 
+  async function handleRoulette() {
+    if (!supabase || rouletteLoading) return
+    setPointNotice(null)
+    setRouletteLoading(true)
+
+    const response = await fetch('/api/points', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'roulette' }),
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+      setPointNotice(data?.error || 'ルーレットの取得に失敗しました')
+      setRouletteLoading(false)
+      return
+    }
+
+    setPointNotice(`ルーレットで ${data.spin}pt を獲得しました！`)
+    setProfile((prev) => prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev)
+    setRouletteLoading(false)
+  }
+
   function saveMemo() {
     window.localStorage.setItem('home-memo', memo)
     setMemoSaved(true)
@@ -226,67 +265,82 @@ export default function HomePage() {
       </header>
 
       <main className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950 p-5 text-white shadow-[0_40px_90px_-40px_rgba(15,23,42,0.55)] sm:p-6">
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-white/5 to-transparent blur-3xl" />
-          <div className="absolute right-[-40px] top-8 h-36 w-36 rounded-full bg-violet-500/20 blur-3xl" />
-          <div className="absolute left-[-24px] top-24 h-24 w-24 rounded-full bg-pink-500/10 blur-2xl" />
-
-          <div className="relative grid gap-5 lg:grid-cols-[1.5fr_1fr]">
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur-sm sm:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/60">会員カード</p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">つくたべメンバー</h2>
-                </div>
-                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/80">PREMIUM</div>
+        <section className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400">つくほーむ</p>
+                <h2 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">ようこそ{profile?.display_name ? `、${profile.display_name}さん` : '！'}</h2>
               </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">会員番号</p>
-                  <p className="mt-3 text-lg font-semibold text-white">TKS-2026</p>
-                </div>
-                <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">つくポイント</p>
-                  <p className="mt-3 text-lg font-semibold text-white">12,345</p>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-[24px] border border-white/10 bg-gradient-to-r from-white/5 via-white/10 to-white/5 p-4 backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">きょうのステータス</p>
-                <p className="mt-2 text-sm text-white/80">ログインとルーレットで毎日少しずつランクアップしていきましょう。</p>
-              </div>
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">MEMBER</div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur-sm sm:p-6">
-              <div className="flex items-center justify-between gap-3">
+            <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/60">会員特典</p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">今日のおすすめ</h3>
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくポイント</p>
+                  <p className="mt-2 text-4xl font-semibold text-slate-950">{profile ? `${profile.points}pt` : '---'}</p>
                 </div>
-                <div className="rounded-full bg-white/10 p-2 text-white/90">
-                  <Sparkles size={18} />
-                </div>
+                <div className="rounded-3xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 shadow-sm">ランクB</div>
               </div>
+              <p className="mt-4 text-sm text-slate-500">毎日ログインとルーレットでポイントをためよう。</p>
+            </div>
 
-              <div className="mt-5 grid gap-3">
-                {QUICK_LINKS.map(({ href, label, description, icon: Icon, accent }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20 ${accent}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/10 p-2 text-white/90">
-                        <Icon size={16} />
-                      </div>
-                      <ArrowRight size={16} className="text-white/80" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-white">{label}</p>
-                    <p className="mt-1 text-xs leading-5 text-white/70">{description}</p>
-                  </Link>
-                ))}
+            <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">ルーレット</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">1〜100ptをランダムゲット</p>
+                </div>
+                <button
+                  onClick={handleRoulette}
+                  disabled={rouletteLoading || profile?.last_roulette_date === new Date().toISOString().split('T')[0]}
+                  className="rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {profile?.last_roulette_date === new Date().toISOString().split('T')[0]
+                    ? '今日のプレイ済み'
+                    : rouletteLoading ? '回しています...' : 'スタート'}
+                </button>
               </div>
+              <p className="mt-4 text-sm text-slate-500">つくポイントをためると、より便利に使えるようになります。</p>
+            </div>
+
+            {pointNotice && (
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                {pointNotice}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">お知らせ</p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-950">最新のトピック</h3>
+              </div>
+              <div className="rounded-full bg-slate-100 p-2 text-slate-500">
+                <Sparkles size={18} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {announcements.slice(0, 4).map((announcement) => {
+                const cfg = kindConfig[announcement.kind] || kindConfig.info
+                const Icon = cfg.icon
+                return (
+                  <div key={announcement.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`rounded-2xl p-2 ${cfg.color}`}>
+                        <Icon size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
+                        {announcement.body && <p className="mt-1 text-sm text-slate-600">{announcement.body}</p>}
+                        <p className="mt-2 text-xs text-slate-500">{announcement.profiles?.display_name || '運営'} · {formatDistanceToNow(new Date(announcement.created_at), { locale: ja, addSuffix: true })}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>
