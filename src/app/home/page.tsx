@@ -226,40 +226,43 @@ export default function HomePage() {
       </header>
 
       <main className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-violet-700 via-fuchsia-600 to-sky-500 p-5 text-white shadow-[0_40px_90px_-40px_rgba(99,102,241,0.45)] sm:p-6">
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-white/10 blur-3xl" />
-          <div className="relative grid gap-5 lg:grid-cols-[1.6fr_1.4fr]">
-            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-inner backdrop-blur-sm sm:p-6">
+        <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950 p-5 text-white shadow-[0_40px_90px_-40px_rgba(15,23,42,0.55)] sm:p-6">
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-white/5 to-transparent blur-3xl" />
+          <div className="absolute right-[-40px] top-8 h-36 w-36 rounded-full bg-violet-500/20 blur-3xl" />
+          <div className="absolute left-[-24px] top-24 h-24 w-24 rounded-full bg-pink-500/10 blur-2xl" />
+
+          <div className="relative grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur-sm sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">館員カード</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">つくたべメンバー</h2>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/60">会員カード</p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">つくたべメンバー</h2>
                 </div>
-                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/80">PLATINUM</span>
+                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/80">PREMIUM</div>
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[24px] border border-white/15 bg-white/10 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">会員番号</p>
+                <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">会員番号</p>
                   <p className="mt-3 text-lg font-semibold text-white">TKS-2026</p>
                 </div>
-                <div className="rounded-[24px] border border-white/15 bg-white/10 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">つくポイント</p>
+                <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">つくポイント</p>
                   <p className="mt-3 text-lg font-semibold text-white">12,345</p>
                 </div>
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-white/15 bg-white/10 p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">ステータス</p>
-                <p className="mt-2 text-sm text-white/90">毎日のログインとルーレットでランクアップ</p>
+              <div className="mt-5 rounded-[24px] border border-white/10 bg-gradient-to-r from-white/5 via-white/10 to-white/5 p-4 backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">きょうのステータス</p>
+                <p className="mt-2 text-sm text-white/80">ログインとルーレットで毎日少しずつランクアップしていきましょう。</p>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-inner backdrop-blur-sm sm:p-6">
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-inner backdrop-blur-sm sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">会員特典</p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">今日のおすすめアクション</h3>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/60">会員特典</p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">今日のおすすめ</h3>
                 </div>
                 <div className="rounded-full bg-white/10 p-2 text-white/90">
                   <Sparkles size={18} />
@@ -271,7 +274,7 @@ export default function HomePage() {
                   <Link
                     key={href}
                     href={href}
-                    className={`rounded-[24px] border border-white/15 bg-white/10 p-4 transition hover:border-white/20 ${accent}`}
+                    className={`rounded-[24px] border border-white/10 bg-white/5 p-4 transition hover:border-white/20 ${accent}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="rounded-2xl bg-white/10 p-2 text-white/90">

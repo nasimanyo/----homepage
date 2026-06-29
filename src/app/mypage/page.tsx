@@ -26,9 +26,43 @@ export default function MyPage() {
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(data)
-      setEditName(data?.display_name || '')
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('profile query error', profileError)
+      }
+
+      if (!profileData) {
+        const defaultName = user.email?.split('@')[0] || 'ユーザー'
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            display_name: defaultName,
+            points: 0,
+            last_login_bonus_date: null,
+            last_roulette_date: null,
+          })
+          .select('*')
+          .single()
+
+        if (insertError || !newProfile) {
+          setLoading(false)
+          return
+        }
+
+        setProfile(newProfile)
+        setEditName(newProfile.display_name || '')
+      } else {
+        setProfile(profileData)
+        setEditName(profileData.display_name || '')
+      }
+
       setLoading(false)
     })
   }, [router, supabase])

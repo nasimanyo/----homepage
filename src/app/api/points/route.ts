@@ -14,14 +14,37 @@ export async function POST(request: NextRequest) {
   }
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: profile, error: profileError } = await supabase
+  let { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('points, last_login_bonus_date, last_roulette_date')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  if (profileError || !profile) {
+  if (profileError) {
+    console.error('profile query error', profileError)
     return NextResponse.json({ error: 'プロフィールの取得に失敗しました' }, { status: 500 })
+  }
+
+  if (!profile) {
+    const defaultName = user.email?.split('@')[0] || 'ユーザー'
+    const { data: insertedProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        display_name: defaultName,
+        points: 0,
+        last_login_bonus_date: null,
+        last_roulette_date: null,
+      })
+      .select('points, last_login_bonus_date, last_roulette_date')
+      .single()
+
+    if (insertError || !insertedProfile) {
+      console.error('profile insert error', insertError)
+      return NextResponse.json({ error: 'プロフィールの作成に失敗しました' }, { status: 500 })
+    }
+
+    profile = insertedProfile
   }
 
   if (action === 'login_bonus') {
