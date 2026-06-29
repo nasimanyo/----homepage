@@ -226,34 +226,65 @@ export default function HomePage() {
       </header>
 
       <main className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
-        <section className="rounded-[24px] bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-500 p-4 text-white shadow-lg sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">みんなのコミュニティ</p>
-              <h2 className="mt-1 text-xl font-semibold leading-snug sm:text-2xl">気になる情報をすぐに確認しよう</h2>
-            </div>
-            <div className="rounded-full bg-white/20 p-2">
-              <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {QUICK_LINKS.map(({ href, label, description, icon: Icon, accent }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`rounded-2xl border border-white/20 p-3 ${accent}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-full bg-white/20 p-2">
-                    <Icon size={16} />
-                  </div>
-                  <ArrowRight size={16} />
+        <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-violet-700 via-fuchsia-600 to-sky-500 p-5 text-white shadow-[0_40px_90px_-40px_rgba(99,102,241,0.45)] sm:p-6">
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-white/10 blur-3xl" />
+          <div className="relative grid gap-5 lg:grid-cols-[1.6fr_1.4fr]">
+            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-inner backdrop-blur-sm sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">館員カード</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">つくたべメンバー</h2>
                 </div>
-                <p className="mt-3 text-sm font-semibold sm:text-base">{label}</p>
-                <p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">{description}</p>
-              </Link>
-            ))}
+                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/80">PLATINUM</span>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[24px] border border-white/15 bg-white/10 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">会員番号</p>
+                  <p className="mt-3 text-lg font-semibold text-white">TKS-2026</p>
+                </div>
+                <div className="rounded-[24px] border border-white/15 bg-white/10 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">つくポイント</p>
+                  <p className="mt-3 text-lg font-semibold text-white">12,345</p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[24px] border border-white/15 bg-white/10 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">ステータス</p>
+                <p className="mt-2 text-sm text-white/90">毎日のログインとルーレットでランクアップ</p>
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-inner backdrop-blur-sm sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">会員特典</p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">今日のおすすめアクション</h3>
+                </div>
+                <div className="rounded-full bg-white/10 p-2 text-white/90">
+                  <Sparkles size={18} />
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {QUICK_LINKS.map(({ href, label, description, icon: Icon, accent }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`rounded-[24px] border border-white/15 bg-white/10 p-4 transition hover:border-white/20 ${accent}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="rounded-2xl bg-white/10 p-2 text-white/90">
+                        <Icon size={16} />
+                      </div>
+                      <ArrowRight size={16} className="text-white/80" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-white">{label}</p>
+                    <p className="mt-1 text-xs leading-5 text-white/70">{description}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
