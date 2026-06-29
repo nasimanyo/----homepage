@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Profile } from '@/types'
-import { User, LogOut, Settings, ShieldCheck, Loader2 } from 'lucide-react'
+import { User, LogOut, Settings, ShieldCheck, Loader2, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -12,6 +12,8 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const router = useRouter()
   const supabase = typeof window === 'undefined' ? null : createClient()
 
@@ -37,6 +39,42 @@ export default function MyPage() {
     await supabase.from('profiles').update({ display_name: editName }).eq('id', profile.id)
     setProfile(p => p ? { ...p, display_name: editName } : p)
     setSaving(false)
+  }
+
+  function getTodayDate() {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  async function handlePointAction(action: 'login_bonus' | 'roulette') {
+    if (!profile || !supabase) return
+    setActionLoading(true)
+    setActionMessage(null)
+
+    const response = await fetch('/api/points', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    const result = await response.json()
+
+    if (!response.ok) {
+      setActionMessage(result?.error || 'エラーが発生しました')
+      setActionLoading(false)
+      return
+    }
+
+    setProfile(prev => prev ? {
+      ...prev,
+      points: result.points,
+      last_login_bonus_date: action === 'login_bonus' ? getTodayDate() : prev.last_login_bonus_date,
+      last_roulette_date: action === 'roulette' ? getTodayDate() : prev.last_roulette_date,
+    } : prev)
+
+    setActionMessage(action === 'login_bonus'
+      ? 'ログインボーナスを受け取りました！ +1pt'
+      : `ルーレットで ${result.spin}pt を獲得しました！`
+    )
+    setActionLoading(false)
   }
 
   async function handleLogout() {
@@ -77,6 +115,9 @@ export default function MyPage() {
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white">
+              <Sparkles size={14} /> つくポイント {profile?.points ?? 0}
+            </span>
             {profile?.is_admin ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white">
                 <ShieldCheck size={14} /> 管理者
@@ -88,6 +129,64 @@ export default function MyPage() {
             )}
           </div>
         </section>
+
+        <section className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-violet-50 p-2 text-violet-600">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">ログインボーナス</h3>
+                <p className="text-xs text-gray-500">毎日1ptを受け取れます</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">+1pt</p>
+                <p className="text-xs text-gray-500">最終受取日: {profile?.last_login_bonus_date || 'まだ'}</p>
+              </div>
+              <button
+                onClick={() => handlePointAction('login_bonus')}
+                disabled={actionLoading || profile?.last_login_bonus_date === getTodayDate()}
+                className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {profile?.last_login_bonus_date === getTodayDate() ? '受け取り済み' : '受け取る'}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-violet-50 p-2 text-violet-600">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">毎日ルーレット</h3>
+                <p className="text-xs text-gray-500">1〜100ptのランダム報酬</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">1〜100pt</p>
+                <p className="text-xs text-gray-500">最終プレイ日: {profile?.last_roulette_date || 'まだ'}</p>
+              </div>
+              <button
+                onClick={() => handlePointAction('roulette')}
+                disabled={actionLoading || profile?.last_roulette_date === getTodayDate()}
+                className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {profile?.last_roulette_date === getTodayDate() ? '今日のプレイ済み' : '回す'}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {actionMessage && (
+          <div className="rounded-[24px] border border-violet-100 bg-violet-50 p-4 text-sm text-violet-700 shadow-sm">
+            {actionMessage}
+          </div>
+        )}
 
         <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center gap-2">

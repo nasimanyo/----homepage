@@ -2,6 +2,9 @@ export type Profile = {
   id: string
   display_name: string
   avatar_url: string | null
+  points: number
+  last_login_bonus_date: string | null
+  last_roulette_date: string | null
   is_admin: boolean
   created_at: string
 }

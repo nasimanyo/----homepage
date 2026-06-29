@@ -8,6 +8,9 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
   avatar_url text,
+  points int not null default 0,
+  last_login_bonus_date date,
+  last_roulette_date date,
   is_admin boolean not null default false,
   created_at timestamptz not null default now()
 );

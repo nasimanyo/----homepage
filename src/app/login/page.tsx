@@ -35,6 +35,9 @@ export default function LoginPage() {
         await supabase.from('profiles').insert({
           id: data.user.id,
           display_name: displayName,
+          points: 0,
+          last_login_bonus_date: null,
+          last_roulette_date: null,
         })
       }
       router.push('/home')
