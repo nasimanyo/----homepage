@@ -5,7 +5,16 @@ import { createClient } from '@/lib/supabase'
 import { Announcement, Poll, Profile } from '@/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { ArrowRight, Bell, BellRing, CalendarDays, Heart, Info, Loader2, Sparkles } from 'lucide-react'
+import {
+  ArrowRight,
+  Bell,
+  BellRing,
+  CalendarDays,
+  Heart,
+  Info,
+  Loader2,
+  Sparkles,
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -15,52 +24,10 @@ const kindConfig = {
   event: { icon: Bell, color: 'text-emerald-600 bg-emerald-50', label: 'イベント' },
 }
 
-const QUICK_LINKS = [
-  {
-    href: '/schedule',
-    label: '予定を見る',
-    description: 'みんなの予定と投票状況を確認',
-    icon: CalendarDays,
-    accent: 'bg-white/15 text-white',
-  },
-  {
-    href: '/info',
-    label: '情報を見る',
-    description: '大事な案内や更新をチェック',
-    icon: Info,
-    accent: 'bg-white/15 text-white',
-  },
-]
-
-const RECOMMENDED_ACTIONS = [
-  {
-    href: '/schedule',
-    title: '予定を確認する',
-    description: '今週の参加状況をすぐチェック',
-    icon: CalendarDays,
-    color: 'bg-violet-50 text-violet-600',
-  },
-  {
-    href: '/info',
-    title: '情報を見返す',
-    description: '大切な案内や連絡を確認',
-    icon: Info,
-    color: 'bg-blue-50 text-blue-600',
-  },
-  {
-    href: '/home',
-    title: 'メモを残す',
-    description: '気づいたことをすぐ保存',
-    icon: Sparkles,
-    color: 'bg-amber-50 text-amber-600',
-  },
-]
-
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [profileLoading, setProfileLoading] = useState(true)
   const [rouletteLoading, setRouletteLoading] = useState(false)
   const [pointNotice, setPointNotice] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
@@ -70,6 +37,7 @@ export default function HomePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>('default')
   const [countdown, setCountdown] = useState<{ title: string; dateLabel: string; remaining: string } | null>(null)
+
   const hasLoadedAnnouncementsRef = useRef(false)
   const lastNotifiedIdsRef = useRef<string[]>([])
   const supabase = typeof window === 'undefined' ? null : createClient()
@@ -117,7 +85,6 @@ export default function HomePage() {
       if (profileData) {
         setProfile(profileData)
       }
-      setProfileLoading(false)
     })
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -131,8 +98,10 @@ export default function HomePage() {
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
-  }, [])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
 
   async function fetchAnnouncements() {
     if (!supabase) return
@@ -171,17 +140,22 @@ export default function HomePage() {
       .order('created_at', { ascending: false })
 
     const polls = (data as Poll[]) || []
-    const candidates = polls.flatMap((poll) => (poll.poll_options || []).map((option) => ({
-      title: poll.title,
-      candidateDate: option.candidate_date,
-    })))
+    const candidates = polls.flatMap((poll) =>
+      (poll.poll_options || []).map((option) => ({
+        title: poll.title,
+        candidateDate: option.candidate_date,
+      })),
+    )
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     const upcoming = candidates
       .filter((candidate) => new Date(`${candidate.candidateDate}T00:00:00`) >= today)
-      .sort((a, b) => new Date(`${a.candidateDate}T00:00:00`).getTime() - new Date(`${b.candidateDate}T00:00:00`).getTime())
+      .sort(
+        (a, b) =>
+          new Date(`${a.candidateDate}T00:00:00`).getTime() - new Date(`${b.candidateDate}T00:00:00`).getTime(),
+      )
 
     if (upcoming.length > 0) {
       const target = new Date(`${upcoming[0].candidateDate}T00:00:00`)
@@ -230,7 +204,9 @@ export default function HomePage() {
     }
 
     setPointNotice(`ルーレットで ${data.spin}pt を獲得しました！`)
-    setProfile((prev) => prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev)
+    setProfile((prev) =>
+      prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev,
+    )
     setRouletteLoading(false)
   }
 
@@ -249,352 +225,265 @@ export default function HomePage() {
     window.localStorage.setItem('home-favorites', JSON.stringify(next))
   }
 
+  const today = new Date().toISOString().split('T')[0]
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.14),_transparent_50%)]">
-      <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/90 px-3 py-4 backdrop-blur sm:px-6 sm:py-5">
-        <div className="flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-slate-950/5 text-slate-900">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:px-6 sm:py-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-violet-500">つくたべホーム</p>
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">つくほーむ</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-600">つくたべメンバー</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-950 sm:text-4xl">マイホーム</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">今日のポイント、お知らせ、ルーレットまで。全てこの画面でサクッと確認できます。</p>
           </div>
-          <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-            <Image src="/favicon.ico" alt="つくほーむのアイコン" width={20} height={20} />
+          <div className="flex items-center gap-3 rounded-3xl bg-slate-900 px-4 py-3 text-white shadow-lg shadow-slate-900/5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-violet-500 text-white shadow-inner shadow-violet-500/20">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-300">本日のステータス</p>
+              <p className="text-sm font-semibold">{today}</p>
+            </div>
           </div>
         </div>
-        <p className="mt-2 text-sm leading-6 text-gray-500 sm:text-base">今日の情報と予定をひと目で確認できます。</p>
       </header>
 
-      <main className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
-        <section className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6">
+        <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+          <div className="space-y-4 rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.3)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-slate-400">つくほーむ</p>
-                <h2 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">ようこそ{profile?.display_name ? `、${profile.display_name}さん` : '！'}</h2>
+                <p className="text-sm font-medium uppercase tracking-[0.28em] text-violet-600">こんにちは</p>
+                <h2 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">{profile?.display_name ? `${profile.display_name} さん` : 'ゲストさん'}</h2>
               </div>
-              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">MEMBER</div>
+              <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">MEMBER</div>
             </div>
 
-            <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくポイント</p>
-                  <p className="mt-2 text-4xl font-semibold text-slate-950">{profile ? `${profile.points}pt` : '---'}</p>
-                </div>
-                <div className="rounded-3xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 shadow-sm">ランクB</div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくポイント</p>
+                <p className="mt-3 text-5xl font-semibold text-slate-950">{profile ? `${profile.points}pt` : '---'}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-600">ログインとルーレットで毎日ポイントをためよう。</p>
               </div>
-              <p className="mt-4 text-sm text-slate-500">毎日ログインとルーレットでポイントをためよう。</p>
-            </div>
 
-            <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">ルーレット</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">1〜100ptをランダムゲット</p>
+              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500">今日のミッション</p>
+                    <h3 className="mt-2 text-xl font-semibold text-slate-950">ルーレットをまわそう</h3>
+                  </div>
+                  <div className="rounded-3xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">チャレンジ</div>
                 </div>
+                <p className="mt-4 text-sm leading-6 text-slate-600">1〜100ptが当たるよ。毎日1回だけチャレンジできるよ。</p>
                 <button
                   onClick={handleRoulette}
-                  disabled={rouletteLoading || profile?.last_roulette_date === new Date().toISOString().split('T')[0]}
-                  className="rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={rouletteLoading || profile?.last_roulette_date === today}
+                  className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {profile?.last_roulette_date === new Date().toISOString().split('T')[0]
-                    ? '今日のプレイ済み'
-                    : rouletteLoading ? '回しています...' : 'スタート'}
+                  {profile?.last_roulette_date === today
+                    ? '本日は完了済み'
+                    : rouletteLoading ? '回しています...' : 'ルーレットを開始'}
                 </button>
+                {pointNotice && <p className="mt-3 text-sm text-slate-600">{pointNotice}</p>}
               </div>
-              <p className="mt-4 text-sm text-slate-500">つくポイントをためると、より便利に使えるようになります。</p>
             </div>
 
-            {pointNotice && (
-              <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                {pointNotice}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">お知らせ</p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950">最新のトピック</h3>
-              </div>
-              <div className="rounded-full bg-slate-100 p-2 text-slate-500">
-                <Sparkles size={18} />
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {announcements.slice(0, 4).map((announcement) => {
-                const cfg = kindConfig[announcement.kind] || kindConfig.info
-                const Icon = cfg.icon
-                return (
-                  <div key={announcement.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className={`rounded-2xl p-2 ${cfg.color}`}>
-                        <Icon size={18} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
-                        {announcement.body && <p className="mt-1 text-sm text-slate-600">{announcement.body}</p>}
-                        <p className="mt-2 text-xs text-slate-500">{announcement.profiles?.display_name || '運営'} · {formatDistanceToNow(new Date(announcement.created_at), { locale: ja, addSuffix: true })}</p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-full bg-violet-50 p-2">
-                <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">今日のおすすめ</p>
-                <p className="text-xs text-gray-500">迷ったらこの3つから始めよう</p>
-              </div>
-            </div>
-            <div className="rounded-full bg-amber-50 p-2 text-amber-600">
-              <Sparkles size={16} />
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {RECOMMENDED_ACTIONS.map(({ href, title, description, icon: Icon, color }) => (
-              <Link key={title} href={href} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3">
-                <div className="flex items-center gap-2">
-                  <div className={`rounded-full p-2 ${color}`}>
-                    <Icon size={15} />
-                  </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
+                <div className="flex items-center gap-3">
+                  <BellRing className="text-violet-600" size={18} />
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{title}</p>
-                    <p className="text-xs text-gray-500">{description}</p>
+                    <p className="text-sm font-semibold text-slate-950">通知設定</p>
+                    <p className="text-xs text-slate-500">すぐに情報を受け取れます</p>
                   </div>
                 </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">最近見たページ</p>
-              <p className="text-xs text-gray-500">すぐ戻れるように整理しておきます</p>
-            </div>
-            <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-              <CalendarDays size={16} />
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {recentPages.length > 0 ? (
-              recentPages.map((page) => (
-                <Link key={page.href} href={page.href} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-                  <span className="text-sm font-medium text-gray-700">{page.label}</span>
-                  <ArrowRight size={15} className="text-gray-400" />
-                </Link>
-              ))
-            ) : (
-              <p className="rounded-2xl bg-gray-50 px-3 py-3 text-sm text-gray-500">まだ履歴がありません。ページを開くとここに表示されます。</p>
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">通知と予定</p>
-              <p className="text-xs text-gray-500">今すぐ気になる内容を見逃しません</p>
-            </div>
-            <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-              <BellRing size={16} />
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">プッシュ通知</p>
-                <p className="text-xs text-gray-500">{userEmail ? `通知先: ${userEmail}` : 'ログイン中のメールを利用します'}</p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <p className="text-sm text-slate-600">{notificationPermission === 'granted' ? '有効化済み' : 'まだ許可されていません'}</p>
+                  <button
+                    type="button"
+                    onClick={requestNotifications}
+                    className="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    {notificationPermission === 'granted' ? '有効中' : '許可する'}
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={requestNotifications}
-                className="rounded-full bg-violet-600 px-3 py-2 text-sm font-semibold text-white"
-              >
-                {notificationPermission === 'granted' ? '有効中' : '許可する'}
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-gray-500">
-              {notificationPermission === 'granted'
-                ? 'お知らせが来たらこの端末ですぐ通知します。'
-                : 'ブラウザの通知を許可すると、重要な情報をすぐ届けられます。'}
-            </p>
-          </div>
 
-          <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">次の予定まで</p>
-                <p className="text-xs text-gray-500">今後の候補日をひと目で確認</p>
-              </div>
-              <div className="rounded-full bg-white p-2 text-amber-600">
-                <CalendarDays size={16} />
+              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="text-amber-600" size={18} />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">次の予定</p>
+                    <p className="text-xs text-slate-500">候補日まであと何日？</p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
+                  {countdown ? (
+                    <>
+                      <p className="text-sm font-semibold text-slate-950">{countdown.title}</p>
+                      <p className="mt-2 text-sm text-slate-500">{countdown.dateLabel}・{countdown.remaining}</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500">現在予定候補はありません。</p>
+                  )}
+                </div>
               </div>
             </div>
-            {countdown ? (
-              <div className="mt-2">
-                <p className="text-sm font-semibold text-gray-800">{countdown.title}</p>
-                <p className="text-xs text-gray-500">{countdown.dateLabel}・{countdown.remaining}</p>
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-gray-500">まだ予定候補がありません。</p>
-            )}
           </div>
-        </section>
 
-        <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">お気に入り</p>
-              <p className="text-xs text-gray-500">大事な情報だけをすぐ見られます</p>
+          <aside className="space-y-4">
+            <div className="rounded-[40px] border border-slate-200 bg-slate-900 p-6 text-white shadow-[0_20px_60px_-35px_rgba(15,23,42,0.5)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-300">ホームカード</p>
+                  <h3 className="mt-2 text-2xl font-semibold">今日のハイライト</h3>
+                </div>
+                <div className="rounded-3xl bg-white/10 px-3 py-2 text-sm font-semibold text-white">MEMO</div>
+              </div>
+              <div className="mt-5 space-y-4">
+                <div className="rounded-3xl bg-slate-800/90 p-4">
+                  <p className="text-sm text-slate-300">ログインメール</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{userEmail ?? '未ログイン'}</p>
+                </div>
+                <div className="rounded-3xl bg-slate-800/90 p-4">
+                  <p className="text-sm text-slate-300">お気に入り</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{favorites.length} 件</p>
+                </div>
+              </div>
             </div>
-            <div className="rounded-full bg-rose-50 p-2 text-rose-500">
-              <Heart size={16} />
-            </div>
-          </div>
-          <div className="mt-3 grid gap-2">
-            {favorites.length > 0 ? (
-              announcements
-                .filter((announcement) => favorites.includes(String(announcement.id)))
-                .slice(0, 3)
-                .map((announcement) => {
+
+            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">最新のお知らせ</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-950">重要トピック</h3>
+                </div>
+                <div className="rounded-full bg-violet-50 p-2 text-violet-600">
+                  <Info size={18} />
+                </div>
+              </div>
+              <div className="mt-5 space-y-3">
+                {announcements.slice(0, 4).map((announcement) => {
                   const cfg = kindConfig[announcement.kind] || kindConfig.info
                   const Icon = cfg.icon
                   return (
-                    <div key={announcement.id} className="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2">
-                          <div className={`rounded-2xl p-2 ${cfg.color}`}>
-                            <Icon size={16} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-800">{announcement.title}</p>
-                            <p className="text-xs text-gray-500">{announcement.body?.slice(0, 36) || '内容を確認しましょう'}</p>
-                          </div>
+                    <div key={announcement.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-1 rounded-2xl p-2 ${cfg.color}`}>
+                          <Icon size={18} />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(String(announcement.id))}
-                          className="rounded-full bg-white p-1.5 text-rose-500"
-                        >
-                          <Heart size={15} fill="currentColor" />
-                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
+                          {announcement.body && <p className="mt-1 text-sm leading-6 text-slate-600">{announcement.body}</p>}
+                        </div>
                       </div>
                     </div>
                   )
-                })
-            ) : (
-              <p className="rounded-2xl bg-gray-50 px-3 py-3 text-sm text-gray-500">気になるお知らせをハートで保存できます。</p>
-            )}
-          </div>
+                })}
+              </div>
+            </div>
+          </aside>
         </section>
 
-        <section className="rounded-[24px] border border-violet-100 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-violet-50 p-2">
-              <Image src="/favicon.ico" alt="つくほーむのアイコン" width={18} height={18} />
+        <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+          <div className="rounded-[40px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-violet-600">メモ</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">今日のメッセージ</h2>
+              </div>
+              <div className="rounded-3xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">保存済み</div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">ひとことメモ</p>
-              <p className="text-xs text-gray-500">大事なことをすぐ残せます</p>
+            <textarea
+              value={memo}
+              onChange={(event) => setMemo(event.target.value)}
+              placeholder="今日の予定・気づき・リマインダーをここに書こう。"
+              className="mt-5 min-h-[220px] w-full rounded-[32px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">{memoSaved ? '保存しました' : 'ローカルに保存されます'}</p>
+              <button
+                type="button"
+                onClick={saveMemo}
+                className="rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700"
+              >
+                保存する
+              </button>
             </div>
           </div>
-          <textarea
-            value={memo}
-            onChange={(event) => setMemo(event.target.value)}
-            placeholder="今日の予定や気づきをメモしておこう"
-            className="mt-3 min-h-24 w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 outline-none ring-0 placeholder:text-gray-400"
-          />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-gray-400">{memoSaved ? '保存しました' : '端末に保存されます'}</p>
-            <button
-              type="button"
-              onClick={saveMemo}
-              className="rounded-full bg-violet-600 px-3 py-2 text-sm font-semibold text-white"
-            >
-              保存
-            </button>
+
+          <div className="space-y-4">
+            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">最近見たページ</p>
+              <div className="mt-4 space-y-2">
+                {recentPages.length > 0 ? (
+                  recentPages.map((page) => (
+                    <Link key={page.href} href={page.href} className="flex items-center justify-between rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:border-violet-200">
+                      <span>{page.label}</span>
+                      <ArrowRight size={16} className="text-slate-400" />
+                    </Link>
+                  ))
+                ) : (
+                  <div className="rounded-3xl bg-slate-50 px-4 py-5 text-sm text-slate-500">閲覧履歴がありません。ページを開くとここに表示されます。</div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">お気に入り</p>
+              <div className="mt-4 space-y-3">
+                {favorites.length > 0 ? (
+                  announcements
+                    .filter((announcement) => favorites.includes(String(announcement.id)))
+                    .slice(0, 3)
+                    .map((announcement) => {
+                      const cfg = kindConfig[announcement.kind] || kindConfig.info
+                      const Icon = cfg.icon
+                      return (
+                        <div key={announcement.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`rounded-2xl p-2 ${cfg.color}`}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-900">{announcement.title}</p>
+                              <p className="mt-1 text-xs text-slate-500">{announcement.body?.slice(0, 40) || '内容を確認しましょう。'}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavorite(String(announcement.id))}
+                              className="rounded-full bg-white p-2 text-rose-500"
+                            >
+                              <Heart size={16} fill="currentColor" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })
+                ) : (
+                  <div className="rounded-3xl bg-slate-50 px-4 py-5 text-sm text-slate-500">ハートを押して気になるお知らせを保存しましょう。</div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
         {loading && (
-          <div className="flex justify-center rounded-3xl border border-gray-100 bg-white py-12 shadow-sm">
-            <Loader2 className="animate-spin text-violet-400" size={28} />
+          <div className="rounded-[40px] border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-violet-500" />
+            <p className="mt-4 text-sm text-slate-500">データを読み込んでいます…</p>
           </div>
         )}
 
         {!loading && announcements.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
-            <Bell size={40} className="mx-auto mb-3 text-gray-300" />
-            <p className="text-base font-semibold text-gray-700">まだお知らせはありません</p>
-            <p className="mt-2 text-sm leading-6 text-gray-500">新しい情報が届くまで、予定や案内を確認してみましょう。</p>
-            <div className="mt-4 flex justify-center gap-2">
-              <Link href="/schedule" className="rounded-full bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-600">
-                予定を見る
-              </Link>
-              <Link href="/info" className="rounded-full bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">
-                情報を見る
-              </Link>
+          <div className="rounded-[40px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+            <Bell className="mx-auto h-12 w-12 text-slate-300" />
+            <p className="mt-4 text-xl font-semibold text-slate-950">お知らせはまだありません</p>
+            <p className="mt-2 text-sm text-slate-500">新しい情報が届くまで、他のページをチェックしましょう。</p>
+            <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link href="/schedule" className="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">予定を見る</Link>
+              <Link href="/info" className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">情報を見る</Link>
             </div>
-          </div>
-        )}
-
-        {!loading && announcements.length > 0 && (
-          <div className="space-y-3">
-            {announcements.map(a => {
-              const cfg = kindConfig[a.kind] || kindConfig.info
-              const Icon = cfg.icon
-              return (
-                <article key={a.id} className="rounded-[22px] border border-gray-100 bg-white p-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className={`rounded-2xl p-2 ${cfg.color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-semibold tracking-[0.18em] text-gray-400">{cfg.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(String(a.id))}
-                          className={`rounded-full p-1.5 ${favorites.includes(String(a.id)) ? 'bg-rose-50 text-rose-500' : 'bg-gray-100 text-gray-400'}`}
-                        >
-                          <Heart size={14} fill={favorites.includes(String(a.id)) ? 'currentColor' : 'none'} />
-                        </button>
-                      </div>
-                      <p className="mt-1 text-sm font-semibold text-gray-800">{a.title}</p>
-                      {a.body && <p className="mt-1 text-sm leading-6 text-gray-600">{a.body}</p>}
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
-                        <span>{a.profiles?.display_name || '管理者'}</span>
-                        <span>·</span>
-                        <span>{formatDistanceToNow(new Date(a.created_at), { locale: ja, addSuffix: true })}</span>
-                      </div>
-                      {a.kind === 'poll_started' && a.ref_id && (
-                        <Link
-                          href={`/schedule/${a.ref_id}`}
-                          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-violet-600"
-                        >
-                          投票する
-                          <ArrowRight size={14} />
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
           </div>
         )}
       </main>

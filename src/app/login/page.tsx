@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -51,22 +50,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10 sm:px-6">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">つくほーむ</p>
-            <h1 className="mt-4 text-3xl font-semibold text-slate-950">ログイン</h1>
-            <p className="mt-2 text-sm text-slate-500">メールアドレスとパスワードでログインしてください。</p>
+    <div className="min-h-screen bg-slate-950/90 py-10">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+        <aside className="hidden overflow-hidden rounded-[40px] bg-gradient-to-br from-violet-900 via-fuchsia-600 to-slate-950 p-10 text-white shadow-2xl lg:block">
+          <div className="max-w-xl space-y-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-300">つくたべホーム</p>
+              <h1 className="mt-6 text-4xl font-semibold tracking-tight">予定もポイントも、毎日がもっと楽しくなる</h1>
+              <p className="mt-4 text-sm leading-7 text-slate-300">ログインして、あなた専用のダッシュボードでスケジュールとお知らせを一括管理。</p>
+            </div>
+            <div className="grid gap-4">
+              <div className="rounded-[28px] bg-white/10 p-5 ring-1 ring-white/15">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-300">スピードアクセス</p>
+                <p className="mt-3 text-lg font-semibold text-white">予定確認・通知設定・ポイント管理</p>
+              </div>
+              <div className="rounded-[28px] bg-white/10 p-5 ring-1 ring-white/15">
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-300">毎日ログイン</p>
+                <p className="mt-3 text-lg font-semibold text-white">ログインするだけでボーナスpt獲得</p>
+              </div>
+            </div>
+            <div className="rounded-[28px] bg-white/10 p-5 ring-1 ring-white/15">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-300">はじめての方へ</p>
+              <p className="mt-3 text-lg font-semibold text-white">新規登録ですぐにスタートできます。</p>
+            </div>
+          </div>
+        </aside>
+
+        <section className="rounded-[40px] bg-white p-8 shadow-2xl">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">アカウント</p>
+                <h1 className="mt-3 text-3xl font-semibold text-slate-950">ログイン / 新規登録</h1>
+              </div>
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">つくほーむ</div>
+            </div>
+
+            <p className="text-sm text-slate-600">メールとパスワードを入力して、今日の予定やポイントをすぐに確認しましょう。</p>
           </div>
 
-          <div className="mt-8 space-y-4">
-            <div className="flex overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-1">
+          <div className="mt-8 rounded-[32px] border border-slate-200 bg-slate-50 p-1">
+            <div className="grid grid-cols-2 gap-1 rounded-[28px] bg-slate-50 p-1">
               {(['login', 'signup'] as Mode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => { setMode(m); setError('') }}
-                  className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                  className={`rounded-[28px] px-4 py-3 text-sm font-semibold transition ${
                     mode === m ? 'bg-slate-950 text-white shadow' : 'text-slate-500'
                   }`}
                 >
@@ -74,44 +103,43 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+          </div>
 
+          <div className="mt-8 space-y-5">
             {mode === 'signup' && (
-              <div className="space-y-3">
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="表示名（例: なしまん）"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full rounded-3xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                  />
-                </div>
+              <div className="relative">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="表示名（例: なしまん）"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full rounded-[28px] border border-slate-200 bg-white py-4 pl-12 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-500"
+                />
               </div>
             )}
 
-            <div className="space-y-3">
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  placeholder="メールアドレス"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-3xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                />
-              </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  placeholder="パスワード（6文字以上）"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  className="w-full rounded-3xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                />
-              </div>
+            <div className="relative">
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="email"
+                placeholder="メールアドレス"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-[28px] border border-slate-200 bg-white py-4 pl-12 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-500"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="password"
+                placeholder="パスワード（6文字以上）"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                className="w-full rounded-[28px] border border-slate-200 bg-white py-4 pl-12 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-500"
+              />
             </div>
 
             {error && <p className="text-sm font-medium text-rose-500">{error}</p>}
@@ -119,40 +147,32 @@ export default function LoginPage() {
             <button
               onClick={handleSubmit}
               disabled={loading || !email || !password || (mode === 'signup' && !displayName.trim())}
-              className="mt-2 w-full rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 w-full rounded-full bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 size={16} className="mr-2 inline-block animate-spin" />}
               {mode === 'login' ? 'ログイン' : 'アカウントを作成'}
             </button>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-            <div className="flex items-center gap-2 font-semibold text-slate-700">
-              <ShieldCheck size={14} /> 安心安全
+          <div className="mt-8 rounded-[32px] border border-slate-200 bg-slate-50 p-5">
+            <div className="flex items-center gap-3">
+              <ShieldCheck size={16} className="text-slate-600" />
+              <span className="text-sm font-semibold text-slate-700">安心・安全</span>
             </div>
-            <p className="mt-2">登録情報は大切に管理します。すぐに予定やお知らせを確認できます。</p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">登録情報は大切に管理され、すぐに予定やお知らせを確認できます。</p>
           </div>
-        </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl">
-          <div className="flex items-center gap-3">
-            <div className="rounded-3xl bg-slate-950 p-3 text-white">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくほーむへようこそ</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950">まいにちの予定管理をもっと楽しく</h2>
-            </div>
-          </div>
-          <div className="mt-5 space-y-3 text-sm text-slate-600">
-            {['予定をすぐ見返せる', 'ルーレットでポイント獲得', 'お気に入りをすぐ保存'].map((item) => (
-              <div key={item} className="flex items-start gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <span className="mt-0.5 h-2.5 w-2.5 rounded-full bg-slate-900" />
-                <span>{item}</span>
+          <div className="mt-6 grid gap-4 rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+            {['すぐに予定を確認', '大事な情報を見逃さない', 'お気に入りをひと目で把握'].map((item) => (
+              <div key={item} className="rounded-[28px] border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                  <Sparkles size={18} />
+                </div>
+                <p className="font-semibold">{item}</p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   )
