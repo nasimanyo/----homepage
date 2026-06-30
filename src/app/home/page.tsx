@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { AppHeader } from '@/components/ui/AppHeader'
 import { Mascot } from '@/components/ui/Mascot'
 import { PageShell } from '@/components/ui/PageShell'
-import { RouletteWheel } from '@/components/ui/RouletteWheel'
+import { RouletteWheel, triggerWheelSpin } from '@/components/ui/RouletteWheel'
 
 const kindConfig = {
   info: { icon: Info, color: 'text-blue-600 bg-blue-50', label: 'お知らせ' },
@@ -34,6 +34,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [rouletteLoading, setRouletteLoading] = useState(false)
+  const [bonusLoading, setBonusLoading] = useState(false)
   const [showRoulette, setShowRoulette] = useState(false)
   const [wheelRotation, setWheelRotation] = useState(0)
   const [wheelSpinning, setWheelSpinning] = useState(false)
@@ -189,20 +190,43 @@ export default function HomePage() {
     }
   }
 
+  async function handleLoginBonus() {
+    if (!supabase || bonusLoading) return
+    setPointNotice(null)
+    setBonusLoading(true)
+
+    const data = await callPointsApi(supabase, 'login_bonus')
+
+    if ('error' in data) {
+      setPointNotice(data.error)
+    } else {
+      setPointNotice('ログインボーナスを受け取りました！ +1pt')
+      setProfile((prev) =>
+        prev
+          ? { ...prev, points: data.points, last_login_bonus_date: new Date().toISOString().split('T')[0] }
+          : prev,
+      )
+    }
+    setBonusLoading(false)
+  }
+
+  function openRouletteModal() {
+    setPointNotice(null)
+    setWheelSpinning(false)
+    setShowRoulette(true)
+  }
+
   async function handleRoulette() {
     if (!supabase || rouletteLoading) return
     setPointNotice(null)
     setRouletteLoading(true)
-    setWheelSpinning(true)
-    setWheelRotation((prev) => prev + 1800 + Math.random() * 360)
 
-    const data = await callPointsApi(supabase, 'roulette')
-
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    const spinPromise = triggerWheelSpin(wheelRotation, setWheelSpinning, setWheelRotation)
+    const apiPromise = callPointsApi(supabase, 'roulette')
+    const [, data] = await Promise.all([spinPromise, apiPromise])
 
     if ('error' in data) {
       setPointNotice(data.error)
-      setWheelSpinning(false)
       setRouletteLoading(false)
       return
     }
@@ -211,7 +235,6 @@ export default function HomePage() {
     setProfile((prev) =>
       prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev,
     )
-    setWheelSpinning(false)
     setRouletteLoading(false)
   }
 
@@ -232,6 +255,7 @@ export default function HomePage() {
 
   const today = new Date().toISOString().split('T')[0]
   const rouletteDone = profile?.last_roulette_date === today
+  const bonusDone = profile?.last_login_bonus_date === today
 
   return (
     <PageShell>
@@ -252,14 +276,38 @@ export default function HomePage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowRoulette(true)}
-          disabled={rouletteDone}
-          className="tsuku-btn mt-4 w-full px-4 py-3 text-sm"
-        >
-          <Star size={14} className="fill-current" />
-          {rouletteDone ? '本日は完了済み' : 'ルーレットを回す'}
-        </button>
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <button
+            onClick={handleLoginBonus}
+            disabled={bonusLoading || bonusDone}
+            className="tsuku-btn w-full px-4 py-3 text-sm"
+          >
+            {bonusLoading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                受け取り中...
+              </>
+            ) : bonusDone ? (
+              'ボーナス受取済み'
+            ) : (
+              'ログインボーナス +1pt'
+            )}
+          </button>
+          <button
+            onClick={openRouletteModal}
+            disabled={rouletteDone}
+            className="tsuku-btn w-full px-4 py-3 text-sm"
+          >
+            <Star size={14} className="fill-current" />
+            {rouletteDone ? 'ルーレット完了済み' : 'ルーレットを回す'}
+          </button>
+        </div>
+
+        {pointNotice && !showRoulette && (
+          <p className="mt-3 rounded-xl bg-[var(--tsuku-green-light)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--tsuku-green)]">
+            {pointNotice}
+          </p>
+        )}
       </section>
 
       {/* お知らせ */}
@@ -454,7 +502,11 @@ export default function HomePage() {
               <AppHeader />
               <button
                 type="button"
-                onClick={() => { setShowRoulette(false); setPointNotice(null) }}
+              onClick={() => {
+                setShowRoulette(false)
+                setPointNotice(null)
+                setWheelSpinning(false)
+              }}
                 className="rounded-full p-2 text-stone-400 hover:bg-stone-100"
                 aria-label="閉じる"
               >
@@ -491,7 +543,11 @@ export default function HomePage() {
 
             <button
               type="button"
-              onClick={() => { setShowRoulette(false); setPointNotice(null) }}
+              onClick={() => {
+                setShowRoulette(false)
+                setPointNotice(null)
+                setWheelSpinning(false)
+              }}
               className="mt-4 w-full text-center text-sm font-medium text-[var(--tsuku-text-muted)] underline-offset-2 hover:underline"
             >
               キャンセル

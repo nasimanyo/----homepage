@@ -11,6 +11,8 @@ const SEGMENTS = [
   { color: '#34D399', label: '40' },
 ]
 
+const SPIN_DURATION_MS = 3200
+
 type RouletteWheelProps = {
   spinning?: boolean
   rotation?: number
@@ -21,16 +23,18 @@ export function RouletteWheel({ spinning = false, rotation = 0 }: RouletteWheelP
 
   return (
     <div className="relative mx-auto h-56 w-56 sm:h-64 sm:w-64">
-      <div
-        className="absolute -top-3 left-1/2 z-10 -translate-x-1/2"
-        aria-hidden
-      >
+      <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2" aria-hidden>
         <div className="h-0 w-0 border-x-[10px] border-x-transparent border-t-[18px] border-t-red-500 drop-shadow" />
       </div>
 
       <div
-        className={`h-full w-full rounded-full border-4 border-[var(--tsuku-text)] shadow-lg ${spinning ? 'transition-transform duration-[3000ms] ease-out' : ''}`}
-        style={{ transform: `rotate(${rotation}deg)` }}
+        className="h-full w-full rounded-full border-4 border-[var(--tsuku-text)] shadow-lg will-change-transform"
+        style={{
+          transform: `rotate(${rotation}deg)`,
+          transition: spinning
+            ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.15, 0.85, 0.2, 1)`
+            : 'none',
+        }}
       >
         <svg viewBox="0 0 200 200" className="h-full w-full">
           {SEGMENTS.map((seg, i) => {
@@ -74,4 +78,27 @@ export function RouletteWheel({ spinning = false, rotation = 0 }: RouletteWheelP
       </div>
     </div>
   )
+}
+
+export const ROULETTE_SPIN_DURATION_MS = SPIN_DURATION_MS
+
+function waitForNextFrame() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+export async function triggerWheelSpin(
+  currentRotation: number,
+  setSpinning: (v: boolean) => void,
+  setRotation: (v: number | ((prev: number) => number)) => void,
+) {
+  setSpinning(false)
+  setRotation(currentRotation % 360)
+  await waitForNextFrame()
+  const extra = 1800 + Math.random() * 360
+  setSpinning(true)
+  setRotation((prev) => prev + extra)
+  await new Promise((resolve) => setTimeout(resolve, SPIN_DURATION_MS))
+  setSpinning(false)
 }
