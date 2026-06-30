@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import Character from '../images/tukkun.png'
 
 const kindConfig = {
   info: { icon: Info, color: 'text-blue-600 bg-blue-50', label: 'お知らせ' },
@@ -228,36 +229,99 @@ export default function HomePage() {
   const today = new Date().toISOString().split('T')[0]
 
   return (
-    <div className="min-h-screen bg-slate-950/5 text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:px-6 sm:py-5">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-600">つくたべメンバー</p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-950 sm:text-4xl">マイホーム</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">今日のポイント、お知らせ、ルーレットまで。全てこの画面でサクッと確認できます。</p>
+    <div className="min-h-screen bg-[#f5f2ea] text-slate-900">
+      <main className="mx-auto max-w-md px-4 py-6 sm:px-6">
+        <section className="rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.18)]">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500">つくほーむ</p>
+            <h1 className="mt-4 text-3xl font-bold text-slate-950">ようこそ{profile?.display_name ? ` ${profile.display_name} さん` : ' ゲストさん'}</h1>
+            <p className="mt-3 text-sm text-slate-600">今日のポイントとお知らせをここでまとめて確認できます。</p>
           </div>
-          <div className="flex items-center gap-3 rounded-3xl bg-slate-900 px-4 py-3 text-white shadow-lg shadow-slate-900/5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-violet-500 text-white shadow-inner shadow-violet-500/20">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-300">本日のステータス</p>
-              <p className="text-sm font-semibold">{today}</p>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6">
-        <section className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-          <div className="space-y-4 rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.3)]">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 rounded-[36px] border border-slate-200 bg-slate-50 p-5 text-center">
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">つくポイント</p>
+            <p className="mt-3 text-4xl font-bold text-slate-950">{profile ? `${profile.points ?? 0}pt` : '---'}</p>
+            <button
+              onClick={handleRoulette}
+              disabled={rouletteLoading || profile?.last_roulette_date === today}
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {profile?.last_roulette_date === today ? '本日は完了済み' : rouletteLoading ? '回しています...' : 'スタート!!'}
+            </button>
+            {pointNotice && <p className="mt-3 text-sm text-slate-600">{pointNotice}</p>}
+          </div>
+
+          <div className="mt-6 rounded-[36px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <BellRing className="text-violet-600" size={18} />
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.28em] text-violet-600">こんにちは</p>
-                <h2 className="mt-2 text-3xl font-semibold text-slate-950 sm:text-4xl">{profile?.display_name ? `${profile.display_name} さん` : 'ゲストさん'}</h2>
+                <p className="text-sm font-semibold text-slate-950">お知らせ</p>
+                <p className="text-xs text-slate-500">最新情報をチェック</p>
               </div>
-              <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">MEMBER</div>
             </div>
+            <div className="mt-4 space-y-3">
+              {announcements.slice(0, 3).map((announcement) => {
+                const cfg = kindConfig[announcement.kind] || kindConfig.info
+                const Icon = cfg.icon
+                return (
+                  <div key={announcement.id} className="flex items-start gap-3 rounded-[28px] border border-slate-100 bg-slate-50 p-4">
+                    <div className={`mt-1 rounded-2xl p-2 ${cfg.color}`}>
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
+                      {announcement.body && <p className="mt-1 text-xs text-slate-500">{announcement.body}</p>}
+                    </div>
+                  </div>
+                )
+              })}
+              {announcements.length === 0 && (
+                <p className="text-sm text-slate-500">お知らせはまだありません。</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[36px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-950">お気に入り</p>
+              <span className="text-xs text-slate-500">{favorites.length} 件</span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {favorites.length > 0 ? (
+                announcements
+                  .filter((announcement) => favorites.includes(String(announcement.id)))
+                  .slice(0, 3)
+                  .map((announcement) => {
+                    const cfg = kindConfig[announcement.kind] || kindConfig.info
+                    const Icon = cfg.icon
+                    return (
+                      <div key={announcement.id} className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50 p-4">
+                        <div className={`rounded-2xl p-2 ${cfg.color}`}>
+                          <Icon size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
+                          <p className="text-xs text-slate-500 truncate">{announcement.body ?? '内容を確認しましょう。'}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+              ) : (
+                <p className="text-sm text-slate-500">ハートを押して気になるお知らせを保存しましょう。</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[36px] border border-slate-200 bg-slate-50 p-5 text-center">
+            <div className="mx-auto h-40 w-40">
+              <Image src={Character} alt="つくほーむキャラクター" width={160} height={160} className="object-contain" />
+            </div>
+            <p className="mt-3 text-sm text-slate-500">今日も一緒に元気にいこう！</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
