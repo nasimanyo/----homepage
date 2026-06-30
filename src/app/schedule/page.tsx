@@ -135,8 +135,8 @@ export default function SchedulePage() {
         </div>
       )}
 
-      <div className="mt-8 flex justify-center pb-2 md:mt-10">
-        <Mascot size="xl" speech="日程を決めよう！" />
+      <div className="mt-6 flex justify-center pb-2">
+        <Mascot size="hero" speech="日程を決めよう！" />
       </div>
     </PageShell>
   )

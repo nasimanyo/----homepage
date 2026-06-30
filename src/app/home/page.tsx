@@ -490,8 +490,8 @@ export default function HomePage() {
       </div>
 
       {/* マスコット */}
-      <div className="mt-8 flex justify-center pb-2 md:mt-10">
-        <Mascot size="xl" />
+      <div className="mt-6 flex justify-center pb-2 md:mt-8">
+        <Mascot size="hero" />
       </div>
 
       {/* ルーレットモーダル */}

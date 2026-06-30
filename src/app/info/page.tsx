@@ -195,8 +195,8 @@ export default function InfoPage() {
         </section>
       </div>
 
-      <div className="mt-8 flex justify-center pb-2 md:mt-10">
-        <Mascot size="xl" speech="メモを残そう！" />
+      <div className="mt-6 flex justify-center pb-2">
+        <Mascot size="hero" speech="メモを残そう！" />
       </div>
     </PageShell>
   )

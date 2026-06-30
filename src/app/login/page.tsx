@@ -141,7 +141,7 @@ export default function LoginPage() {
 
         <div className="mt-8 flex justify-center md:mt-10">
           <Mascot
-            size="xl"
+            size="hero"
             speech={mode === 'signup' ? 'ようこそ！' : undefined}
           />
         </div>
