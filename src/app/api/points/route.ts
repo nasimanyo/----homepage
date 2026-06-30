@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
+async function resolveUser(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, request: NextRequest) {
+  const authHeader = request.headers.get('Authorization')
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+  if (bearerToken) {
+    const { data: { user }, error } = await supabase.auth.getUser(bearerToken)
+    if (error) {
+      console.error('auth getUser(bearer) error', error)
+      return null
+    }
+    return user
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 export async function POST(request: NextRequest) {
   const { action } = await request.json() as { action?: string }
   if (!action || !['login_bonus', 'roulette'].includes(action)) {
@@ -8,7 +25,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await resolveUser(supabase, request)
   if (!user) {
     return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
@@ -22,7 +39,10 @@ export async function POST(request: NextRequest) {
 
   if (profileError) {
     console.error('profile query error', profileError)
-    return NextResponse.json({ error: 'プロフィールの取得に失敗しました' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'プロフィールの取得に失敗しました', detail: profileError.message },
+      { status: 500 },
+    )
   }
 
   if (!profile) {
@@ -41,11 +61,16 @@ export async function POST(request: NextRequest) {
 
     if (insertError || !insertedProfile) {
       console.error('profile insert error', insertError)
-      return NextResponse.json({ error: 'プロフィールの作成に失敗しました' }, { status: 500 })
+      return NextResponse.json(
+        { error: 'プロフィールの作成に失敗しました', detail: insertError?.message },
+        { status: 500 },
+      )
     }
 
     profile = insertedProfile
   }
+
+  const currentPoints = profile.points ?? 0
 
   if (action === 'login_bonus') {
     if (profile.last_login_bonus_date === today) {
@@ -54,7 +79,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('profiles')
       .update({
-        points: profile.points + 1,
+        points: currentPoints + 1,
         last_login_bonus_date: today,
       })
       .eq('id', user.id)
@@ -62,6 +87,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error || !data) {
+      console.error('login bonus update error', error)
       return NextResponse.json({ error: 'ポイントの更新に失敗しました' }, { status: 500 })
     }
     return NextResponse.json({ points: data.points })
@@ -75,7 +101,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('profiles')
     .update({
-      points: profile.points + spin,
+      points: currentPoints + spin,
       last_roulette_date: today,
     })
     .eq('id', user.id)
@@ -83,6 +109,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error || !data) {
+    console.error('roulette update error', error)
     return NextResponse.json({ error: 'ポイントの更新に失敗しました' }, { status: 500 })
   }
 

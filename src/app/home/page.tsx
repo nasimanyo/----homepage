@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { callPointsApi } from '@/lib/points-api'
 import { Announcement, Poll, Profile } from '@/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -195,23 +196,18 @@ export default function HomePage() {
     setWheelSpinning(true)
     setWheelRotation((prev) => prev + 1800 + Math.random() * 360)
 
-    const response = await fetch('/api/points', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'roulette' }),
-    })
-    const data = await response.json()
+    const data = await callPointsApi(supabase, 'roulette')
 
     await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    if (!response.ok) {
-      setPointNotice(data?.error || 'ルーレットの取得に失敗しました')
+    if ('error' in data) {
+      setPointNotice(data.error)
       setWheelSpinning(false)
       setRouletteLoading(false)
       return
     }
 
-    setPointNotice(`ルーレットで ${data.spin}pt を獲得しました！`)
+    setPointNotice(`ルーレットで ${data.spin ?? 0}pt を獲得しました！`)
     setProfile((prev) =>
       prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev,
     )

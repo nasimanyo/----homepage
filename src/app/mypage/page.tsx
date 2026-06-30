@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { callPointsApi } from '@/lib/points-api'
 import { Profile } from '@/types'
 import { LogOut, Settings, ShieldCheck, Loader2, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -88,15 +89,10 @@ export default function MyPage() {
     setActionLoading(true)
     setActionMessage(null)
 
-    const response = await fetch('/api/points', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    })
-    const result = await response.json()
+    const result = await callPointsApi(supabase, action)
 
-    if (!response.ok) {
-      setActionMessage(result?.error || 'エラーが発生しました')
+    if ('error' in result) {
+      setActionMessage(result.error)
       setActionLoading(false)
       return
     }
@@ -110,7 +106,7 @@ export default function MyPage() {
 
     setActionMessage(action === 'login_bonus'
       ? 'ログインボーナスを受け取りました！ +1pt'
-      : `ルーレットで ${result.spin}pt を獲得しました！`
+      : `ルーレットで ${result.spin ?? 0}pt を獲得しました！`
     )
     setActionLoading(false)
   }

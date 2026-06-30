@@ -15,6 +15,11 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
+-- 既存DB向け: ポイント列が無い場合に追加
+alter table profiles add column if not exists points int not null default 0;
+alter table profiles add column if not exists last_login_bonus_date date;
+alter table profiles add column if not exists last_roulette_date date;
+
 -- ② お知らせ（ホーム上部フィード）
 create table if not exists announcements (
   id uuid primary key default gen_random_uuid(),
