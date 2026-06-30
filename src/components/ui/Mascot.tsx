@@ -9,10 +9,10 @@ type MascotProps = {
 
 const sizes = {
   sm: 'h-40 w-40 sm:h-44 sm:w-44',
-  md: 'h-60 w-60 sm:h-[17rem] sm:w-[17rem]',
-  lg: 'h-72 w-72 sm:h-84 sm:w-84 md:h-96 md:w-96',
-  xl: 'h-80 w-80 sm:h-96 sm:w-96 md:h-[28rem] md:w-[28rem]',
-  hero: 'h-[min(92vw,26rem)] w-[min(92vw,26rem)] sm:h-[27rem] sm:w-[27rem] md:h-[30rem] md:w-[30rem]',
+  md: 'h-56 w-56 sm:h-60 sm:w-60',
+  lg: 'h-72 w-72 sm:h-80 sm:w-80 md:h-84 md:w-84',
+  xl: 'h-80 w-80 sm:h-88 sm:w-88 md:h-[24rem] md:w-[24rem]',
+  hero: 'h-[min(92vw,22rem)] w-[min(92vw,22rem)] sm:h-[24rem] sm:w-[24rem] md:h-[26rem] md:w-[26rem]',
 }
 
 export function Mascot({ size = 'md', speech, className = '' }: MascotProps) {
