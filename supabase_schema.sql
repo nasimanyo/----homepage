@@ -78,11 +78,17 @@ alter table votes enable row level security;
 alter table info_posts enable row level security;
 
 -- profiles: 誰でも読める、自分だけ更新
+drop policy if exists profiles_select on profiles;
+drop policy if exists profiles_insert on profiles;
+drop policy if exists profiles_update on profiles;
 create policy "profiles_select" on profiles for select using (true);
 create policy "profiles_insert" on profiles for insert with check (auth.uid() = id);
 create policy "profiles_update" on profiles for update using (auth.uid() = id);
 
 -- announcements: 誰でも読める、ログイン済みは投稿
+drop policy if exists announcements_select on announcements;
+drop policy if exists announcements_insert on announcements;
+drop policy if exists announcements_delete on announcements;
 create policy "announcements_select" on announcements for select using (true);
 create policy "announcements_insert" on announcements for insert with check (auth.uid() is not null);
 create policy "announcements_delete" on announcements for delete using (
@@ -90,6 +96,9 @@ create policy "announcements_delete" on announcements for delete using (
 );
 
 -- polls
+drop policy if exists polls_select on polls;
+drop policy if exists polls_insert on polls;
+drop policy if exists polls_update on polls;
 create policy "polls_select" on polls for select using (true);
 create policy "polls_insert" on polls for insert with check (
   exists(select 1 from profiles where id=auth.uid() and is_admin)
@@ -99,6 +108,9 @@ create policy "polls_update" on polls for update using (
 );
 
 -- poll_options
+drop policy if exists poll_options_select on poll_options;
+drop policy if exists poll_options_insert on poll_options;
+drop policy if exists poll_options_delete on poll_options;
 create policy "poll_options_select" on poll_options for select using (true);
 create policy "poll_options_insert" on poll_options for insert with check (
   exists(select 1 from profiles where id=auth.uid() and is_admin)
@@ -108,12 +120,19 @@ create policy "poll_options_delete" on poll_options for delete using (
 );
 
 -- votes: 誰でも読める、自分の票だけ操作
+drop policy if exists votes_select on votes;
+drop policy if exists votes_insert on votes;
+drop policy if exists votes_update on votes;
+drop policy if exists votes_delete on votes;
 create policy "votes_select" on votes for select using (true);
 create policy "votes_insert" on votes for insert with check (auth.uid() = voter_id);
 create policy "votes_update" on votes for update using (auth.uid() = voter_id);
 create policy "votes_delete" on votes for delete using (auth.uid() = voter_id);
 
 -- info_posts: 誰でも読める、ログイン済みは投稿
+drop policy if exists info_select on info_posts;
+drop policy if exists info_insert on info_posts;
+drop policy if exists info_delete on info_posts;
 create policy "info_select" on info_posts for select using (true);
 create policy "info_insert" on info_posts for insert with check (auth.uid() is not null);
 create policy "info_delete" on info_posts for delete using (
@@ -129,6 +148,38 @@ create policy "info_delete" on info_posts for delete using (
 -- ============================================================
 -- Realtime の有効化（Supabase ダッシュボード > Database > Replication でも設定）
 -- ============================================================
-alter publication supabase_realtime add table announcements;
-alter publication supabase_realtime add table votes;
-alter publication supabase_realtime add table polls;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_rel pr
+    JOIN pg_publication p ON pr.prpubid = p.oid
+    WHERE p.pubname = 'supabase_realtime' AND pr.prrelid = 'public.announcements'::regclass
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE announcements;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_rel pr
+    JOIN pg_publication p ON pr.prpubid = p.oid
+    WHERE p.pubname = 'supabase_realtime' AND pr.prrelid = 'public.votes'::regclass
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE votes;
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_rel pr
+    JOIN pg_publication p ON pr.prpubid = p.oid
+    WHERE p.pubname = 'supabase_realtime' AND pr.prrelid = 'public.polls'::regclass
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE polls;
+  END IF;
+END
+$$;

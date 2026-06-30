@@ -262,7 +262,7 @@ export default function HomePage() {
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくポイント</p>
-                <p className="mt-3 text-5xl font-semibold text-slate-950">{profile ? `${profile.points}pt` : '---'}</p>
+                <p className="mt-3 text-5xl font-semibold text-slate-950">{profile ? `${profile.points ?? 0}pt` : '---'}</p>
                 <p className="mt-4 text-sm leading-6 text-slate-600">ログインとルーレットで毎日ポイントをためよう。</p>
               </div>
 
