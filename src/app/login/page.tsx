@@ -75,7 +75,7 @@ export default function LoginPage() {
 
   return (
     <PageShell>
-      <div className="tsuku-card p-6">
+      <div className="tsuku-card p-6 sm:p-8 md:max-w-lg md:mx-auto">
         <AppHeader subtitle={mode === 'login' ? 'loginpage' : undefined} />
 
         <div className="mt-8 space-y-4">
@@ -139,9 +139,9 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex justify-center md:mt-10">
           <Mascot
-            size={mode === 'signup' ? 'md' : 'lg'}
+            size="xl"
             speech={mode === 'signup' ? 'ようこそ！' : undefined}
           />
         </div>

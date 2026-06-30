@@ -107,8 +107,8 @@ export default function PollDetailPage() {
 
   return (
     <PageShell noPadding>
-      <header className="sticky top-0 z-10 border-b border-[var(--tsuku-border)] bg-[var(--tsuku-bg)]/95 px-4 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3">
+      <header className="sticky top-0 z-10 border-b border-[var(--tsuku-border)] bg-[var(--tsuku-bg)]/95 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="mx-auto flex max-w-md items-center gap-3 md:max-w-2xl lg:max-w-4xl">
           <button onClick={() => router.back()} className="rounded-xl p-2 hover:bg-stone-100">
             <ArrowLeft size={20} />
           </button>
@@ -128,7 +128,7 @@ export default function PollDetailPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-4">
+      <main className="mx-auto max-w-md px-4 py-4 md:max-w-2xl md:px-8 lg:max-w-4xl">
         {poll.description && (
           <p className="mb-4 rounded-xl bg-stone-50 p-3 text-sm text-[var(--tsuku-text-muted)]">{poll.description}</p>
         )}

@@ -133,7 +133,8 @@ export default function MyPage() {
     <PageShell>
       <AppHeader />
 
-      <section className="tsuku-card mt-6 p-6 text-center">
+      <div className="mt-6 grid gap-6 md:grid-cols-2 md:items-center">
+      <section className="tsuku-card p-6 text-center sm:p-8">
         <p className="text-lg font-bold text-[var(--tsuku-text)]">
           Hello!! {profile?.display_name || 'ユーザー'} さん
         </p>
@@ -150,8 +151,9 @@ export default function MyPage() {
         )}
       </section>
 
-      <div className="mt-6 flex justify-center">
-        <Mascot size="lg" />
+      <div className="flex justify-center md:justify-end">
+        <Mascot size="xl" />
+      </div>
       </div>
 
       <button
@@ -164,7 +166,7 @@ export default function MyPage() {
       </button>
 
       {showSettings && (
-        <section className="tsuku-card mt-4 space-y-4 p-5">
+        <section className="tsuku-card mt-4 grid gap-4 p-5 sm:p-6 md:grid-cols-2">
           <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-[var(--tsuku-orange)]" />
@@ -208,12 +210,12 @@ export default function MyPage() {
           </div>
 
           {actionMessage && (
-            <p className="rounded-xl bg-[var(--tsuku-green-light)] px-4 py-2.5 text-sm font-medium text-[var(--tsuku-green)]">
+            <p className="rounded-xl bg-[var(--tsuku-green-light)] px-4 py-2.5 text-sm font-medium text-[var(--tsuku-green)] md:col-span-2">
               {actionMessage}
             </p>
           )}
 
-          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4 md:col-span-2">
             <h3 className="text-sm font-bold text-[var(--tsuku-text)]">表示名を変更</h3>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
@@ -234,7 +236,7 @@ export default function MyPage() {
           </div>
 
           {profile?.is_admin && (
-            <Link href="/admin" className="block">
+            <Link href="/admin" className="block md:col-span-2">
               <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-4 transition hover:shadow-md">
                 <div className="flex items-center gap-3">
                   <ShieldCheck size={18} className="text-[var(--tsuku-orange-dark)]" />
@@ -249,7 +251,7 @@ export default function MyPage() {
 
           <button
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-100"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-100 md:col-span-2"
           >
             <LogOut size={16} /> ログアウト
           </button>

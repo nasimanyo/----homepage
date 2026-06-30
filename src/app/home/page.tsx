@@ -241,8 +241,9 @@ export default function HomePage() {
     <PageShell>
       <AppHeader />
 
+      <div className="mt-6 grid gap-4 lg:grid-cols-2 lg:gap-6">
       {/* ウェルカム & ポイント */}
-      <section className="tsuku-card mt-6 p-5">
+      <section className="tsuku-card p-5 sm:p-6">
         <p className="text-center text-base font-bold text-[var(--tsuku-text)]">
           ようこそ{profile?.display_name ? ` ${profile.display_name} さん` : ' ゲストさん'}！
         </p>
@@ -266,7 +267,7 @@ export default function HomePage() {
       </section>
 
       {/* お知らせ */}
-      <section className="tsuku-card mt-4 p-5">
+      <section className="tsuku-card p-5 sm:p-6">
         <h2 className="flex items-center gap-2 text-base font-bold text-[var(--tsuku-text)]">
           <BellRing size={18} className="text-[var(--tsuku-orange)]" />
           お知らせ
@@ -327,9 +328,11 @@ export default function HomePage() {
           </ul>
         )}
       </section>
+      </div>
 
+      <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:gap-6">
       {/* お気に入り */}
-      <section className="tsuku-card mt-4 p-5">
+      <section className="tsuku-card p-5 sm:p-6">
         <h2 className="flex items-center gap-2 text-base font-bold text-[var(--tsuku-text)]">
           <Star size={18} className="fill-[var(--tsuku-orange)] text-[var(--tsuku-orange)]" />
           お気に入り
@@ -378,7 +381,7 @@ export default function HomePage() {
 
       {/* 次の予定 & 通知 */}
       {(countdown || notificationPermission !== 'granted') && (
-        <section className="tsuku-card mt-4 grid gap-3 p-5 sm:grid-cols-2">
+        <section className="tsuku-card grid gap-3 p-5 sm:grid-cols-2 sm:p-6">
           {countdown && (
             <div className="rounded-xl bg-[var(--tsuku-green-light)] p-4">
               <p className="text-xs font-bold text-[var(--tsuku-green)]">次の予定</p>
@@ -403,7 +406,7 @@ export default function HomePage() {
       )}
 
       {/* メモ */}
-      <section className="tsuku-card mt-4 p-5">
+      <section className="tsuku-card p-5 sm:p-6">
         <h2 className="text-base font-bold text-[var(--tsuku-text)]">今日のメッセージ</h2>
         <textarea
           value={memo}
@@ -423,7 +426,7 @@ export default function HomePage() {
 
       {/* 最近見たページ */}
       {recentPages.length > 0 && (
-        <section className="tsuku-card mt-4 p-5">
+        <section className="tsuku-card p-5 sm:p-6 lg:col-span-2">
           <h2 className="text-sm font-bold text-[var(--tsuku-text-muted)]">最近見たページ</h2>
           <ul className="mt-3 space-y-1.5">
             {recentPages.map((page) => (
@@ -440,10 +443,11 @@ export default function HomePage() {
           </ul>
         </section>
       )}
+      </div>
 
       {/* マスコット */}
-      <div className="mt-6 flex justify-center pb-2">
-        <Mascot size="lg" />
+      <div className="mt-8 flex justify-center pb-2 md:mt-10">
+        <Mascot size="xl" />
       </div>
 
       {/* ルーレットモーダル */}
