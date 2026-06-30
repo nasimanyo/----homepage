@@ -8,11 +8,11 @@ type MascotProps = {
 }
 
 const sizes = {
-  sm: 'h-36 w-36 sm:h-40 sm:w-40',
-  md: 'h-52 w-52 sm:h-60 sm:w-60',
-  lg: 'h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80',
-  xl: 'h-72 w-72 sm:h-80 sm:w-80 md:h-96 md:w-96',
-  hero: 'h-[min(78vw,22rem)] w-[min(78vw,22rem)] sm:h-[24rem] sm:w-[24rem] md:h-[26rem] md:w-[26rem]',
+  sm: 'h-40 w-40 sm:h-44 sm:w-44',
+  md: 'h-60 w-60 sm:h-[17rem] sm:w-[17rem]',
+  lg: 'h-72 w-72 sm:h-84 sm:w-84 md:h-96 md:w-96',
+  xl: 'h-80 w-80 sm:h-96 sm:w-96 md:h-[28rem] md:w-[28rem]',
+  hero: 'h-[min(92vw,26rem)] w-[min(92vw,26rem)] sm:h-[27rem] sm:w-[27rem] md:h-[30rem] md:w-[30rem]',
 }
 
 export function Mascot({ size = 'md', speech, className = '' }: MascotProps) {
@@ -29,7 +29,7 @@ export function Mascot({ size = 'md', speech, className = '' }: MascotProps) {
           src={Character}
           alt="つっくん"
           fill
-          sizes="(max-width: 640px) 78vw, (max-width: 1024px) 384px, 416px"
+          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 432px, 480px"
           className="object-contain drop-shadow-md"
           priority={size === 'hero' || size === 'xl' || size === 'lg'}
         />

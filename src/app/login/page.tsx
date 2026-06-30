@@ -121,7 +121,7 @@ export default function LoginPage() {
                 type="checkbox"
                 className="h-4 w-4 rounded border-stone-300 accent-[var(--tsuku-orange)]"
               />
-              利用規約に同意する
+              利用規約に同意する（下記リンク）
             </label>
           )}
 
@@ -166,9 +166,15 @@ export default function LoginPage() {
           )}
           <span className="text-stone-300">|</span>
           <Link
-            href="#"
+            href="/terms"
             className="text-[var(--tsuku-text-muted)] underline-offset-2 hover:underline"
-            onClick={(e) => e.preventDefault()}
+          >
+            利用規約
+          </Link>
+          <span className="text-stone-300">|</span>
+          <Link
+            href="/privacy"
+            className="text-[var(--tsuku-text-muted)] underline-offset-2 hover:underline"
           >
             プライバシーポリシー
           </Link>

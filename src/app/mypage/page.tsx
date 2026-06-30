@@ -84,18 +84,21 @@ export default function MyPage() {
   }
 
   if (loading) return (
-    <PageShell>
-      <div className="flex justify-center py-16">
+    <PageShell noPadding>
+      <div className="px-4 py-8 sm:px-6">
+        <div className="flex justify-center py-12">
         <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={32} />
+        </div>
       </div>
     </PageShell>
   )
 
   return (
-    <PageShell>
+    <PageShell noPadding>
+      <div className="px-4 py-3 sm:px-6 sm:py-4">
       <AppHeader />
 
-      <section className="tsuku-card mt-4 overflow-hidden p-4 sm:p-5">
+      <section className="tsuku-card mt-3 p-3 sm:p-4">
         <div className="text-center">
           <p className="text-base font-bold text-[var(--tsuku-text)] sm:text-lg">
             Hello!! {profile?.display_name || 'ユーザー'} さん
@@ -113,7 +116,7 @@ export default function MyPage() {
           )}
         </div>
 
-        <div className="-mb-2 mt-1 flex justify-center">
+        <div className="-mb-6 mt-0 flex justify-center sm:-mb-8">
           <Mascot size="hero" />
         </div>
       </section>
@@ -121,15 +124,15 @@ export default function MyPage() {
       <button
         type="button"
         onClick={() => setShowSettings(!showSettings)}
-        className="tsuku-card mt-3 flex w-full items-center justify-center gap-2 p-3.5 text-sm font-semibold text-[var(--tsuku-text)] transition hover:bg-stone-50"
+        className="tsuku-card mt-2.5 flex w-full items-center justify-center gap-2 p-3 text-sm font-semibold text-[var(--tsuku-text)] transition hover:bg-stone-50"
       >
-        <Settings size={17} className="text-[var(--tsuku-text-muted)]" />
+        <Settings size={16} className="text-[var(--tsuku-text-muted)]" />
         詳細設定
       </button>
 
       {showSettings && (
-        <section className="tsuku-card mt-3 space-y-3 p-4 sm:p-5">
-          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-3.5">
+        <section className="tsuku-card mt-2.5 space-y-3 p-3.5 sm:p-4">
+          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-3">
             <h3 className="text-sm font-bold text-[var(--tsuku-text)]">表示名を変更</h3>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
               <input
@@ -151,9 +154,9 @@ export default function MyPage() {
 
           {profile?.is_admin && (
             <Link href="/admin" className="block">
-              <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-3.5 transition hover:shadow-md">
+              <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-3 transition hover:shadow-md">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={17} className="text-[var(--tsuku-orange-dark)]" />
+                  <ShieldCheck size={16} className="text-[var(--tsuku-orange-dark)]" />
                   <div>
                     <p className="text-sm font-bold text-[var(--tsuku-text)]">管理者パネルを開く</p>
                     <p className="text-xs text-[var(--tsuku-text-muted)]">予定合わせの作成やお知らせ投稿</p>
@@ -171,6 +174,7 @@ export default function MyPage() {
           </button>
         </section>
       )}
+      </div>
     </PageShell>
   )
 }

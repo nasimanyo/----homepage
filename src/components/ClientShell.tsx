@@ -11,6 +11,8 @@ const PAGE_LABELS: Record<string, string> = {
   '/info': '情報',
   '/mypage': 'マイページ',
   '/login': 'ログイン',
+  '/terms': '利用規約',
+  '/privacy': 'プライバシーポリシー',
 }
 
 const NAV_ITEMS = [
@@ -41,7 +43,7 @@ export function PageTracker() {
 
 export function BottomNav() {
   const pathname = usePathname()
-  const hideNav = ['/login', '/admin', '/auth'].some((p) => pathname.startsWith(p))
+  const hideNav = ['/login', '/admin', '/auth', '/terms', '/privacy'].some((p) => pathname.startsWith(p))
 
   if (hideNav) return null
 
