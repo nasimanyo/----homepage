@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Profile } from '@/types'
-import { User, LogOut, Settings, ShieldCheck, Loader2, Sparkles } from 'lucide-react'
+import { LogOut, Settings, ShieldCheck, Loader2, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { AppHeader } from '@/components/ui/AppHeader'
+import { Mascot } from '@/components/ui/Mascot'
+import { PageShell } from '@/components/ui/PageShell'
 
 export default function MyPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -14,6 +17,7 @@ export default function MyPage() {
   const [saving, setSaving] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
   const router = useRouter()
   const supabase = typeof window === 'undefined' ? null : createClient()
 
@@ -118,162 +122,140 @@ export default function MyPage() {
   }
 
   if (loading) return (
-    <div className="flex justify-center py-24">
-      <Loader2 className="animate-spin text-violet-400" size={32} />
-    </div>
+    <PageShell>
+      <div className="flex justify-center py-24">
+        <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={32} />
+      </div>
+    </PageShell>
   )
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.12),_transparent_45%)]">
-      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/80 px-4 py-4 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-violet-500">プロフィール</p>
-            <h1 className="text-xl font-bold text-gray-900">マイページ</h1>
-          </div>
-          <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-            <User size={18} />
-          </div>
+    <PageShell>
+      <AppHeader />
+
+      <section className="tsuku-card mt-6 p-6 text-center">
+        <p className="text-lg font-bold text-[var(--tsuku-text)]">
+          Hello!! {profile?.display_name || 'ユーザー'} さん
+        </p>
+        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--tsuku-orange-light)] px-5 py-2">
+          <Sparkles size={16} className="text-[var(--tsuku-orange)]" />
+          <span className="text-sm font-bold text-[var(--tsuku-text)]">
+            つくポイント {profile?.points ?? 0} pt
+          </span>
         </div>
-      </header>
+        {profile?.is_admin && (
+          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-[var(--tsuku-text-muted)]">
+            <ShieldCheck size={12} /> 管理者
+          </span>
+        )}
+      </section>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-4 px-3 py-4 sm:px-6 sm:py-6">
-        <section className="overflow-hidden rounded-[28px] border border-violet-100 bg-gradient-to-br from-violet-600 via-fuchsia-500 to-indigo-500 p-5 text-white shadow-[0_20px_60px_-24px_rgba(109,40,217,0.45)]">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/30 bg-white/20 text-white">
-              <User size={28} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white/80">こんにちは</p>
-              <h2 className="text-xl font-semibold">{profile?.display_name || 'ユーザー'}</h2>
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white">
-              <Sparkles size={14} /> つくポイント {profile?.points ?? 0}
-            </span>
-            {profile?.is_admin ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white">
-                <ShieldCheck size={14} /> 管理者
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white">
-                <ShieldCheck size={14} /> 一般ユーザー
-              </span>
-            )}
-          </div>
-        </section>
+      <div className="mt-6 flex justify-center">
+        <Mascot size="lg" />
+      </div>
 
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-                <Sparkles size={18} />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">ログインボーナス</h3>
-                <p className="text-xs text-gray-500">毎日1ptを受け取れます</p>
-              </div>
+      <button
+        type="button"
+        onClick={() => setShowSettings(!showSettings)}
+        className="tsuku-card mt-6 flex w-full items-center justify-center gap-2 p-4 text-sm font-semibold text-[var(--tsuku-text)] transition hover:bg-stone-50"
+      >
+        <Settings size={18} className="text-[var(--tsuku-text-muted)]" />
+        詳細設定
+      </button>
+
+      {showSettings && (
+        <section className="tsuku-card mt-4 space-y-4 p-5">
+          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-[var(--tsuku-orange)]" />
+              <h3 className="text-sm font-bold text-[var(--tsuku-text)]">ログインボーナス</h3>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="mt-1 text-xs text-[var(--tsuku-text-muted)]">毎日1ptを受け取れます</p>
+            <div className="mt-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-2xl font-bold text-gray-900">+1pt</p>
-                <p className="text-xs text-gray-500">最終受取日: {profile?.last_login_bonus_date || 'まだ'}</p>
+                <p className="text-xl font-extrabold text-[var(--tsuku-text)]">+1pt</p>
+                <p className="text-[10px] text-stone-400">最終: {profile?.last_login_bonus_date || 'まだ'}</p>
               </div>
               <button
                 onClick={() => handlePointAction('login_bonus')}
                 disabled={actionLoading || profile?.last_login_bonus_date === getTodayDate()}
-                className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="tsuku-btn px-4 py-2 text-xs"
               >
                 {profile?.last_login_bonus_date === getTodayDate() ? '受け取り済み' : '受け取る'}
               </button>
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-                <Sparkles size={18} />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">毎日ルーレット</h3>
-                <p className="text-xs text-gray-500">1〜100ptのランダム報酬</p>
-              </div>
+          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-[var(--tsuku-orange)]" />
+              <h3 className="text-sm font-bold text-[var(--tsuku-text)]">毎日ルーレット</h3>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="mt-1 text-xs text-[var(--tsuku-text-muted)]">1〜100ptのランダム報酬</p>
+            <div className="mt-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-2xl font-bold text-gray-900">1〜100pt</p>
-                <p className="text-xs text-gray-500">最終プレイ日: {profile?.last_roulette_date || 'まだ'}</p>
+                <p className="text-xl font-extrabold text-[var(--tsuku-text)]">1〜100pt</p>
+                <p className="text-[10px] text-stone-400">最終: {profile?.last_roulette_date || 'まだ'}</p>
               </div>
               <button
                 onClick={() => handlePointAction('roulette')}
                 disabled={actionLoading || profile?.last_roulette_date === getTodayDate()}
-                className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="tsuku-btn px-4 py-2 text-xs"
               >
-                {profile?.last_roulette_date === getTodayDate() ? '今日のプレイ済み' : '回す'}
+                {profile?.last_roulette_date === getTodayDate() ? 'プレイ済み' : '回す'}
               </button>
             </div>
           </div>
-        </section>
 
-        {actionMessage && (
-          <div className="rounded-[24px] border border-violet-100 bg-violet-50 p-4 text-sm text-violet-700 shadow-sm">
-            {actionMessage}
-          </div>
-        )}
+          {actionMessage && (
+            <p className="rounded-xl bg-[var(--tsuku-green-light)] px-4 py-2.5 text-sm font-medium text-[var(--tsuku-green)]">
+              {actionMessage}
+            </p>
+          )}
 
-        <section className="rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-              <Settings size={16} />
+          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+            <h3 className="text-sm font-bold text-[var(--tsuku-text)]">表示名を変更</h3>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="tsuku-input flex-1"
+                placeholder="新しい表示名"
+              />
+              <button
+                onClick={saveName}
+                disabled={saving || editName === profile?.display_name}
+                className="tsuku-btn px-4 py-2.5 text-sm"
+              >
+                {saving ? '保存中...' : '保存'}
+              </button>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">表示名を変更</h3>
-              <p className="text-xs text-gray-500">わかりやすい名前にして、みんなに伝えましょう</p>
-            </div>
           </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700 outline-none transition focus:border-violet-400 focus:bg-white"
-              placeholder="新しい表示名"
-            />
-            <button
-              onClick={saveName}
-              disabled={saving || editName === profile?.display_name}
-              className="rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? '保存中...' : '保存'}
-            </button>
-          </div>
-        </section>
 
-        {profile?.is_admin && (
-          <Link href="/admin">
-            <section className="rounded-[24px] border border-violet-100 bg-violet-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-violet-600 p-2 text-white">
-                  <ShieldCheck size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">管理者パネルを開く</p>
-                  <p className="text-xs text-gray-500">予定合わせの作成やお知らせ投稿ができます</p>
+          {profile?.is_admin && (
+            <Link href="/admin" className="block">
+              <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-4 transition hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck size={18} className="text-[var(--tsuku-orange-dark)]" />
+                  <div>
+                    <p className="text-sm font-bold text-[var(--tsuku-text)]">管理者パネルを開く</p>
+                    <p className="text-xs text-[var(--tsuku-text-muted)]">予定合わせの作成やお知らせ投稿</p>
+                  </div>
                 </div>
               </div>
-            </section>
-          </Link>
-        )}
+            </Link>
+          )}
 
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-red-100 bg-red-50 py-3.5 text-sm font-semibold text-red-500 shadow-sm transition hover:bg-red-100"
-        >
-          <LogOut size={16} /> ログアウト
-        </button>
-      </main>
-    </div>
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-500 transition hover:bg-red-100"
+          >
+            <LogOut size={16} /> ログアウト
+          </button>
+        </section>
+      )}
+    </PageShell>
   )
 }
 

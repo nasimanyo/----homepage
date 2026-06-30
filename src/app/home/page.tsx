@@ -13,11 +13,14 @@ import {
   Heart,
   Info,
   Loader2,
-  Sparkles,
+  Star,
+  X,
 } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
-import Character from '../images/tukkun.png'
+import { AppHeader } from '@/components/ui/AppHeader'
+import { Mascot } from '@/components/ui/Mascot'
+import { PageShell } from '@/components/ui/PageShell'
+import { RouletteWheel } from '@/components/ui/RouletteWheel'
 
 const kindConfig = {
   info: { icon: Info, color: 'text-blue-600 bg-blue-50', label: 'お知らせ' },
@@ -30,6 +33,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [rouletteLoading, setRouletteLoading] = useState(false)
+  const [showRoulette, setShowRoulette] = useState(false)
+  const [wheelRotation, setWheelRotation] = useState(0)
+  const [wheelSpinning, setWheelSpinning] = useState(false)
   const [pointNotice, setPointNotice] = useState<string | null>(null)
   const [memo, setMemo] = useState('')
   const [memoSaved, setMemoSaved] = useState(false)
@@ -50,9 +56,7 @@ export default function HomePage() {
     loadCountdown()
 
     const savedMemo = window.localStorage.getItem('home-memo')
-    if (savedMemo) {
-      setMemo(savedMemo)
-    }
+    if (savedMemo) setMemo(savedMemo)
 
     const storedRecentPages = window.localStorage.getItem('recent-pages')
     if (storedRecentPages) {
@@ -83,9 +87,7 @@ export default function HomePage() {
         .eq('id', user.id)
         .maybeSingle()
 
-      if (profileData) {
-        setProfile(profileData)
-      }
+      if (profileData) setProfile(profileData)
     })
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -190,6 +192,8 @@ export default function HomePage() {
     if (!supabase || rouletteLoading) return
     setPointNotice(null)
     setRouletteLoading(true)
+    setWheelSpinning(true)
+    setWheelRotation((prev) => prev + 1800 + Math.random() * 360)
 
     const response = await fetch('/api/points', {
       method: 'POST',
@@ -198,8 +202,11 @@ export default function HomePage() {
     })
     const data = await response.json()
 
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+
     if (!response.ok) {
       setPointNotice(data?.error || 'ルーレットの取得に失敗しました')
+      setWheelSpinning(false)
       setRouletteLoading(false)
       return
     }
@@ -208,6 +215,7 @@ export default function HomePage() {
     setProfile((prev) =>
       prev ? { ...prev, points: data.points, last_roulette_date: new Date().toISOString().split('T')[0] } : prev,
     )
+    setWheelSpinning(false)
     setRouletteLoading(false)
   }
 
@@ -227,331 +235,271 @@ export default function HomePage() {
   }
 
   const today = new Date().toISOString().split('T')[0]
+  const rouletteDone = profile?.last_roulette_date === today
 
   return (
-    <div className="min-h-screen bg-[#f5f2ea] text-slate-900">
-      <main className="mx-auto max-w-md px-4 py-6 sm:px-6">
-        <section className="rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.18)]">
-          <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500">つくほーむ</p>
-            <h1 className="mt-4 text-3xl font-bold text-slate-950">ようこそ{profile?.display_name ? ` ${profile.display_name} さん` : ' ゲストさん'}</h1>
-            <p className="mt-3 text-sm text-slate-600">今日のポイントとお知らせをここでまとめて確認できます。</p>
-          </div>
+    <PageShell>
+      <AppHeader />
 
-          <div className="mt-6 rounded-[36px] border border-slate-200 bg-slate-50 p-5 text-center">
-            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">つくポイント</p>
-            <p className="mt-3 text-4xl font-bold text-slate-950">{profile ? `${profile.points ?? 0}pt` : '---'}</p>
-            <button
-              onClick={handleRoulette}
-              disabled={rouletteLoading || profile?.last_roulette_date === today}
-              className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {profile?.last_roulette_date === today ? '本日は完了済み' : rouletteLoading ? '回しています...' : 'スタート!!'}
-            </button>
-            {pointNotice && <p className="mt-3 text-sm text-slate-600">{pointNotice}</p>}
-          </div>
+      {/* ウェルカム & ポイント */}
+      <section className="tsuku-card mt-6 p-5">
+        <p className="text-center text-base font-bold text-[var(--tsuku-text)]">
+          ようこそ{profile?.display_name ? ` ${profile.display_name} さん` : ' ゲストさん'}！
+        </p>
 
-          <div className="mt-6 rounded-[36px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <BellRing className="text-violet-600" size={18} />
-              <div>
-                <p className="text-sm font-semibold text-slate-950">お知らせ</p>
-                <p className="text-xs text-slate-500">最新情報をチェック</p>
-              </div>
+        <div className="mt-5 rounded-2xl bg-[var(--tsuku-orange-light)] p-4 text-center">
+          <p className="text-xs font-bold tracking-wider text-[var(--tsuku-orange-dark)]">つくポイント</p>
+          <p className="mt-1 text-4xl font-extrabold text-[var(--tsuku-text)]">
+            {profile ? `${profile.points ?? 0}` : '---'}
+            <span className="ml-1 text-lg font-bold">pt</span>
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowRoulette(true)}
+          disabled={rouletteDone}
+          className="tsuku-btn mt-4 w-full px-4 py-3 text-sm"
+        >
+          <Star size={14} className="fill-current" />
+          {rouletteDone ? '本日は完了済み' : 'ルーレットを回す'}
+        </button>
+      </section>
+
+      {/* お知らせ */}
+      <section className="tsuku-card mt-4 p-5">
+        <h2 className="flex items-center gap-2 text-base font-bold text-[var(--tsuku-text)]">
+          <BellRing size={18} className="text-[var(--tsuku-orange)]" />
+          お知らせ
+        </h2>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={28} />
+          </div>
+        ) : announcements.length === 0 ? (
+          <div className="mt-4 rounded-2xl bg-stone-50 p-6 text-center">
+            <Bell className="mx-auto text-stone-300" size={32} />
+            <p className="mt-3 text-sm font-semibold text-[var(--tsuku-text)]">お知らせはまだありません</p>
+            <p className="mt-1 text-xs text-[var(--tsuku-text-muted)]">新しい情報が届くまでお待ちください</p>
+            <div className="mt-4 flex justify-center gap-2">
+              <Link href="/schedule" className="tsuku-btn px-4 py-2 text-xs">予定を見る</Link>
+              <Link href="/info" className="rounded-full bg-stone-200 px-4 py-2 text-xs font-semibold text-[var(--tsuku-text)]">情報を見る</Link>
             </div>
-            <div className="mt-4 space-y-3">
-              {announcements.slice(0, 3).map((announcement) => {
+          </div>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {announcements.map((announcement) => {
+              const cfg = kindConfig[announcement.kind] || kindConfig.info
+              const Icon = cfg.icon
+              const authorName = announcement.profiles?.display_name
+              const isFav = favorites.includes(String(announcement.id))
+
+              return (
+                <li
+                  key={announcement.id}
+                  className="flex items-start gap-3 rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-3"
+                >
+                  <div className={`mt-0.5 shrink-0 rounded-lg p-1.5 ${cfg.color}`}>
+                    <Icon size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-snug text-[var(--tsuku-text)]">
+                      {authorName ? `${authorName}さんが投稿を公開しました` : announcement.title}
+                    </p>
+                    {announcement.body && (
+                      <p className="mt-0.5 text-xs text-[var(--tsuku-text-muted)] line-clamp-2">{announcement.body}</p>
+                    )}
+                    <p className="mt-1 text-[10px] text-stone-400">
+                      {formatDistanceToNow(new Date(announcement.created_at), { locale: ja, addSuffix: true })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(String(announcement.id))}
+                    className={`shrink-0 rounded-full p-1.5 transition ${isFav ? 'text-[var(--tsuku-orange)]' : 'text-stone-300 hover:text-[var(--tsuku-orange)]'}`}
+                    aria-label={isFav ? 'お気に入り解除' : 'お気に入り追加'}
+                  >
+                    <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* お気に入り */}
+      <section className="tsuku-card mt-4 p-5">
+        <h2 className="flex items-center gap-2 text-base font-bold text-[var(--tsuku-text)]">
+          <Star size={18} className="fill-[var(--tsuku-orange)] text-[var(--tsuku-orange)]" />
+          お気に入り
+          <span className="ml-auto text-xs font-normal text-[var(--tsuku-text-muted)]">{favorites.length} 件</span>
+        </h2>
+
+        <ul className="mt-4 space-y-2">
+          {favorites.length > 0 ? (
+            announcements
+              .filter((a) => favorites.includes(String(a.id)))
+              .map((announcement) => {
                 const cfg = kindConfig[announcement.kind] || kindConfig.info
                 const Icon = cfg.icon
                 return (
-                  <div key={announcement.id} className="flex items-start gap-3 rounded-[28px] border border-slate-100 bg-slate-50 p-4">
-                    <div className={`mt-1 rounded-2xl p-2 ${cfg.color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
-                      {announcement.body && <p className="mt-1 text-xs text-slate-500">{announcement.body}</p>}
-                    </div>
-                  </div>
-                )
-              })}
-              {announcements.length === 0 && (
-                <p className="text-sm text-slate-500">お知らせはまだありません。</p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[36px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-950">お気に入り</p>
-              <span className="text-xs text-slate-500">{favorites.length} 件</span>
-            </div>
-            <div className="mt-4 space-y-3">
-              {favorites.length > 0 ? (
-                announcements
-                  .filter((announcement) => favorites.includes(String(announcement.id)))
-                  .slice(0, 3)
-                  .map((announcement) => {
-                    const cfg = kindConfig[announcement.kind] || kindConfig.info
-                    const Icon = cfg.icon
-                    return (
-                      <div key={announcement.id} className="flex items-center gap-3 rounded-[28px] border border-slate-100 bg-slate-50 p-4">
-                        <div className={`rounded-2xl p-2 ${cfg.color}`}>
-                          <Icon size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
-                          <p className="text-xs text-slate-500 truncate">{announcement.body ?? '内容を確認しましょう。'}</p>
-                        </div>
-                      </div>
-                    )
-                  })
-              ) : (
-                <p className="text-sm text-slate-500">ハートを押して気になるお知らせを保存しましょう。</p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[36px] border border-slate-200 bg-slate-50 p-5 text-center">
-            <div className="mx-auto h-40 w-40">
-              <Image src={Character} alt="つくほーむキャラクター" width={160} height={160} className="object-contain" />
-            </div>
-            <p className="mt-3 text-sm text-slate-500">今日も一緒に元気にいこう！</p>
-          </div>
-        </section>
-      </main>
-    </div>
-  )
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">つくポイント</p>
-                <p className="mt-3 text-5xl font-semibold text-slate-950">{profile ? `${profile.points ?? 0}pt` : '---'}</p>
-                <p className="mt-4 text-sm leading-6 text-slate-600">ログインとルーレットで毎日ポイントをためよう。</p>
-              </div>
-
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500">今日のミッション</p>
-                    <h3 className="mt-2 text-xl font-semibold text-slate-950">ルーレットをまわそう</h3>
-                  </div>
-                  <div className="rounded-3xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700">チャレンジ</div>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-slate-600">1〜100ptが当たるよ。毎日1回だけチャレンジできるよ。</p>
-                <button
-                  onClick={handleRoulette}
-                  disabled={rouletteLoading || profile?.last_roulette_date === today}
-                  className="mt-5 inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {profile?.last_roulette_date === today
-                    ? '本日は完了済み'
-                    : rouletteLoading ? '回しています...' : 'ルーレットを開始'}
-                </button>
-                {pointNotice && <p className="mt-3 text-sm text-slate-600">{pointNotice}</p>}
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
-                <div className="flex items-center gap-3">
-                  <BellRing className="text-violet-600" size={18} />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">通知設定</p>
-                    <p className="text-xs text-slate-500">すぐに情報を受け取れます</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <p className="text-sm text-slate-600">{notificationPermission === 'granted' ? '有効化済み' : 'まだ許可されていません'}</p>
-                  <button
-                    type="button"
-                    onClick={requestNotifications}
-                    className="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white"
+                  <li
+                    key={announcement.id}
+                    className="flex items-center gap-3 rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-3"
                   >
-                    {notificationPermission === 'granted' ? '有効中' : '許可する'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="rounded-[32px] border border-slate-200 bg-slate-50 p-5">
-                <div className="flex items-center gap-3">
-                  <CalendarDays className="text-amber-600" size={18} />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">次の予定</p>
-                    <p className="text-xs text-slate-500">候補日まであと何日？</p>
-                  </div>
-                </div>
-                <div className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
-                  {countdown ? (
-                    <>
-                      <p className="text-sm font-semibold text-slate-950">{countdown.title}</p>
-                      <p className="mt-2 text-sm text-slate-500">{countdown.dateLabel}・{countdown.remaining}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-slate-500">現在予定候補はありません。</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <aside className="space-y-4">
-            <div className="rounded-[40px] border border-slate-200 bg-slate-900 p-6 text-white shadow-[0_20px_60px_-35px_rgba(15,23,42,0.5)]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-300">ホームカード</p>
-                  <h3 className="mt-2 text-2xl font-semibold">今日のハイライト</h3>
-                </div>
-                <div className="rounded-3xl bg-white/10 px-3 py-2 text-sm font-semibold text-white">MEMO</div>
-              </div>
-              <div className="mt-5 space-y-4">
-                <div className="rounded-3xl bg-slate-800/90 p-4">
-                  <p className="text-sm text-slate-300">ログインメール</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{userEmail ?? '未ログイン'}</p>
-                </div>
-                <div className="rounded-3xl bg-slate-800/90 p-4">
-                  <p className="text-sm text-slate-300">お気に入り</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{favorites.length} 件</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">最新のお知らせ</p>
-                  <h3 className="mt-2 text-xl font-semibold text-slate-950">重要トピック</h3>
-                </div>
-                <div className="rounded-full bg-violet-50 p-2 text-violet-600">
-                  <Info size={18} />
-                </div>
-              </div>
-              <div className="mt-5 space-y-3">
-                {announcements.slice(0, 4).map((announcement) => {
-                  const cfg = kindConfig[announcement.kind] || kindConfig.info
-                  const Icon = cfg.icon
-                  return (
-                    <div key={announcement.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-1 rounded-2xl p-2 ${cfg.color}`}>
-                          <Icon size={18} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-950">{announcement.title}</p>
-                          {announcement.body && <p className="mt-1 text-sm leading-6 text-slate-600">{announcement.body}</p>}
-                        </div>
-                      </div>
+                    <Star size={14} className="shrink-0 fill-[var(--tsuku-orange)] text-[var(--tsuku-orange)]" />
+                    <div className={`shrink-0 rounded-lg p-1.5 ${cfg.color}`}>
+                      <Icon size={14} />
                     </div>
-                  )
-                })}
-              </div>
-            </div>
-          </aside>
-        </section>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--tsuku-text)] truncate">{announcement.title}</p>
+                      <p className="text-xs text-[var(--tsuku-text-muted)] truncate">
+                        {announcement.body ?? '内容を確認しましょう。'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(String(announcement.id))}
+                      className="shrink-0 text-[var(--tsuku-orange)]"
+                    >
+                      <Heart size={16} fill="currentColor" />
+                    </button>
+                  </li>
+                )
+              })
+          ) : (
+            <li className="rounded-xl bg-stone-50 p-4 text-center text-sm text-[var(--tsuku-text-muted)]">
+              ハートを押して気になるお知らせを保存しましょう。
+            </li>
+          )}
+        </ul>
+      </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-          <div className="rounded-[40px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-violet-600">メモ</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">今日のメッセージ</h2>
-              </div>
-              <div className="rounded-3xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">保存済み</div>
+      {/* 次の予定 & 通知 */}
+      {(countdown || notificationPermission !== 'granted') && (
+        <section className="tsuku-card mt-4 grid gap-3 p-5 sm:grid-cols-2">
+          {countdown && (
+            <div className="rounded-xl bg-[var(--tsuku-green-light)] p-4">
+              <p className="text-xs font-bold text-[var(--tsuku-green)]">次の予定</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--tsuku-text)]">{countdown.title}</p>
+              <p className="text-xs text-[var(--tsuku-text-muted)]">{countdown.dateLabel}・{countdown.remaining}</p>
             </div>
-            <textarea
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-              placeholder="今日の予定・気づき・リマインダーをここに書こう。"
-              className="mt-5 min-h-[220px] w-full rounded-[32px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">{memoSaved ? '保存しました' : 'ローカルに保存されます'}</p>
+          )}
+          {notificationPermission !== 'granted' && (
+            <div className="rounded-xl bg-stone-50 p-4">
+              <p className="text-xs font-bold text-[var(--tsuku-text-muted)]">通知設定</p>
+              <p className="mt-1 text-xs text-[var(--tsuku-text-muted)]">新しいお知らせをすぐ受け取れます</p>
               <button
                 type="button"
-                onClick={saveMemo}
-                className="rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700"
+                onClick={requestNotifications}
+                className="tsuku-btn mt-2 px-3 py-1.5 text-xs"
               >
-                保存する
+                許可する
               </button>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">最近見たページ</p>
-              <div className="mt-4 space-y-2">
-                {recentPages.length > 0 ? (
-                  recentPages.map((page) => (
-                    <Link key={page.href} href={page.href} className="flex items-center justify-between rounded-3xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700 transition hover:border-violet-200">
-                      <span>{page.label}</span>
-                      <ArrowRight size={16} className="text-slate-400" />
-                    </Link>
-                  ))
-                ) : (
-                  <div className="rounded-3xl bg-slate-50 px-4 py-5 text-sm text-slate-500">閲覧履歴がありません。ページを開くとここに表示されます。</div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[40px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">お気に入り</p>
-              <div className="mt-4 space-y-3">
-                {favorites.length > 0 ? (
-                  announcements
-                    .filter((announcement) => favorites.includes(String(announcement.id)))
-                    .slice(0, 3)
-                    .map((announcement) => {
-                      const cfg = kindConfig[announcement.kind] || kindConfig.info
-                      const Icon = cfg.icon
-                      return (
-                        <div key={announcement.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`rounded-2xl p-2 ${cfg.color}`}>
-                              <Icon size={16} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-slate-900">{announcement.title}</p>
-                              <p className="mt-1 text-xs text-slate-500">{announcement.body?.slice(0, 40) || '内容を確認しましょう。'}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleFavorite(String(announcement.id))}
-                              className="rounded-full bg-white p-2 text-rose-500"
-                            >
-                              <Heart size={16} fill="currentColor" />
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })
-                ) : (
-                  <div className="rounded-3xl bg-slate-50 px-4 py-5 text-sm text-slate-500">ハートを押して気になるお知らせを保存しましょう。</div>
-                )}
-              </div>
-            </div>
-          </div>
+          )}
         </section>
+      )}
 
-        {loading && (
-          <div className="rounded-[40px] border border-slate-200 bg-white p-12 text-center shadow-sm">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-violet-500" />
-            <p className="mt-4 text-sm text-slate-500">データを読み込んでいます…</p>
-          </div>
-        )}
+      {/* メモ */}
+      <section className="tsuku-card mt-4 p-5">
+        <h2 className="text-base font-bold text-[var(--tsuku-text)]">今日のメッセージ</h2>
+        <textarea
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="今日の予定・気づき・リマインダーをここに書こう。"
+          className="tsuku-input mt-3 min-h-[100px] resize-none"
+        />
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-xs text-[var(--tsuku-text-muted)]">
+            {memoSaved ? '保存しました' : 'ローカルに保存されます'}
+          </p>
+          <button type="button" onClick={saveMemo} className="tsuku-btn px-4 py-2 text-xs">
+            保存する
+          </button>
+        </div>
+      </section>
 
-        {!loading && announcements.length === 0 && (
-          <div className="rounded-[40px] border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
-            <Bell className="mx-auto h-12 w-12 text-slate-300" />
-            <p className="mt-4 text-xl font-semibold text-slate-950">お知らせはまだありません</p>
-            <p className="mt-2 text-sm text-slate-500">新しい情報が届くまで、他のページをチェックしましょう。</p>
-            <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Link href="/schedule" className="rounded-full bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">予定を見る</Link>
-              <Link href="/info" className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">情報を見る</Link>
+      {/* 最近見たページ */}
+      {recentPages.length > 0 && (
+        <section className="tsuku-card mt-4 p-5">
+          <h2 className="text-sm font-bold text-[var(--tsuku-text-muted)]">最近見たページ</h2>
+          <ul className="mt-3 space-y-1.5">
+            {recentPages.map((page) => (
+              <li key={page.href}>
+                <Link
+                  href={page.href}
+                  className="flex items-center justify-between rounded-xl bg-stone-50 px-4 py-2.5 text-sm text-[var(--tsuku-text)] transition hover:bg-[var(--tsuku-orange-light)]"
+                >
+                  <span>{page.label}</span>
+                  <ArrowRight size={14} className="text-stone-400" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* マスコット */}
+      <div className="mt-6 flex justify-center pb-2">
+        <Mascot size="lg" />
+      </div>
+
+      {/* ルーレットモーダル */}
+      {showRoulette && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="tsuku-card w-full max-w-sm p-6 animate-in">
+            <div className="flex items-center justify-between">
+              <AppHeader />
+              <button
+                type="button"
+                onClick={() => { setShowRoulette(false); setPointNotice(null) }}
+                className="rounded-full p-2 text-stone-400 hover:bg-stone-100"
+                aria-label="閉じる"
+              >
+                <X size={20} />
+              </button>
             </div>
+
+            <div className="mt-6">
+              <RouletteWheel spinning={wheelSpinning} rotation={wheelRotation} />
+            </div>
+
+            {pointNotice && (
+              <p className="mt-4 rounded-xl bg-[var(--tsuku-green-light)] px-4 py-2.5 text-center text-sm font-semibold text-[var(--tsuku-green)]">
+                {pointNotice}
+              </p>
+            )}
+
+            <button
+              onClick={handleRoulette}
+              disabled={rouletteLoading || rouletteDone}
+              className="tsuku-btn mt-6 w-full px-5 py-4 text-base"
+            >
+              {rouletteLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  回しています...
+                </>
+              ) : rouletteDone ? (
+                '本日は完了済み'
+              ) : (
+                'スタート!!'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setShowRoulette(false); setPointNotice(null) }}
+              className="mt-4 w-full text-center text-sm font-medium text-[var(--tsuku-text-muted)] underline-offset-2 hover:underline"
+            >
+              キャンセル
+            </button>
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </PageShell>
   )
 }
 

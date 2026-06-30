@@ -7,6 +7,8 @@ import { CalendarDays, CheckCircle2, Clock, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { AppHeader } from '@/components/ui/AppHeader'
+import { PageShell } from '@/components/ui/PageShell'
 
 export default function SchedulePage() {
   const [polls, setPolls] = useState<Poll[]>([])
@@ -33,75 +35,68 @@ export default function SchedulePage() {
   const closed = polls.filter(p => p.status === 'closed')
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-4">
-        <h1 className="text-lg font-bold text-gray-900">📅 予定合わせ</h1>
-        <p className="text-xs text-gray-400 mt-0.5">みんなで日程を決めよう</p>
-      </header>
+    <PageShell>
+      <AppHeader subtitle="予定合わせ" />
 
-      <main className="px-4 py-4 space-y-6">
+      <main className="mt-6 space-y-6">
         {loading && (
           <div className="flex justify-center py-12">
-            <Loader2 className="animate-spin text-violet-400" size={28} />
+            <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={28} />
           </div>
         )}
 
         {!loading && (
           <>
-            {/* 募集中 */}
             <section>
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <h2 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--tsuku-text-muted)]">
                 <Clock size={13} /> 募集中
               </h2>
               {open.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-6">募集中の予定合わせはありません</p>
+                <p className="rounded-xl bg-stone-50 py-8 text-center text-sm text-[var(--tsuku-text-muted)]">
+                  募集中の予定合わせはありません
+                </p>
               )}
               <div className="space-y-2">
                 {open.map(p => (
                   <Link key={p.id} href={`/schedule/${p.id}`}>
-                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-violet-100 hover:border-violet-300 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-violet-50 text-violet-500">
-                          <CalendarDays size={18} />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800 text-sm">{p.title}</p>
-                          {p.description && (
-                            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{p.description}</p>
-                          )}
-                        </div>
-                        <span className="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-medium">
-                          投票する
-                        </span>
+                    <div className="tsuku-card flex items-center gap-3 p-4 transition hover:border-[var(--tsuku-orange)]">
+                      <div className="rounded-xl bg-[var(--tsuku-orange-light)] p-2 text-[var(--tsuku-orange)]">
+                        <CalendarDays size={18} />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[var(--tsuku-text)]">{p.title}</p>
+                        {p.description && (
+                          <p className="mt-0.5 text-xs text-[var(--tsuku-text-muted)] line-clamp-1">{p.description}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-[var(--tsuku-orange-light)] px-2.5 py-1 text-[10px] font-bold text-[var(--tsuku-orange-dark)]">
+                        投票する
+                      </span>
                     </div>
                   </Link>
                 ))}
               </div>
             </section>
 
-            {/* 確定済み */}
             {closed.length > 0 && (
               <section>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <h2 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--tsuku-text-muted)]">
                   <CheckCircle2 size={13} /> 確定済み
                 </h2>
                 <div className="space-y-2">
                   {closed.map(p => (
                     <Link key={p.id} href={`/schedule/${p.id}`}>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 opacity-75">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-xl bg-gray-50 text-gray-400">
-                            <CheckCircle2 size={18} />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-700 text-sm">{p.title}</p>
-                            {p.decided_at && (
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                確定日: {format(new Date(p.decided_at), 'M月d日(E)', { locale: ja })}
-                              </p>
-                            )}
-                          </div>
+                      <div className="tsuku-card flex items-center gap-3 p-4 opacity-75">
+                        <div className="rounded-xl bg-stone-100 p-2 text-stone-400">
+                          <CheckCircle2 size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-[var(--tsuku-text)]">{p.title}</p>
+                          {p.decided_at && (
+                            <p className="mt-0.5 text-xs text-[var(--tsuku-text-muted)]">
+                              確定日: {format(new Date(p.decided_at), 'M月d日(E)', { locale: ja })}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -112,7 +107,7 @@ export default function SchedulePage() {
           </>
         )}
       </main>
-    </div>
+    </PageShell>
   )
 }
 

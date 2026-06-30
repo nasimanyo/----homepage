@@ -6,6 +6,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --tsuku-bg: #fff8f0;
+  --tsuku-bg-card: #ffffff;
+  --tsuku-orange: #f97316;
+  --tsuku-orange-light: #ffedd5;
+  --tsuku-orange-dark: #ea580c;
+  --tsuku-green: #22c55e;
+  --tsuku-green-light: #dcfce7;
+  --tsuku-text: #1c1917;
+  --tsuku-text-muted: #78716c;
+  --tsuku-border: #e7e5e4;
+  --tsuku-btn: #1a1a1a;
+  --tsuku-btn-hover: #333333;
+  --tsuku-shadow: 0 8px 32px -12px rgba(249, 115, 22, 0.18);
+  --tsuku-radius: 1.25rem;
 }
 
 * {
@@ -14,7 +29,7 @@
 }
 
 html {
-  background-color: #f8fafc;
+  background-color: var(--tsuku-bg);
   font-size: 16px;
   scroll-behavior: smooth;
 }
@@ -23,9 +38,9 @@ body {
   margin: 0;
   min-height: 100vh;
   overscroll-behavior: none;
-  color: #111827;
-  background-color: #f8fafc;
-  font-family: Arial, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  color: var(--tsuku-text);
+  background-color: var(--tsuku-bg);
+  font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   font-size: 15px;
   line-height: 1.7;
   -webkit-text-size-adjust: 100%;
@@ -46,4 +61,57 @@ select {
 img {
   display: block;
   max-width: 100%;
+}
+
+.tsuku-card {
+  border-radius: var(--tsuku-radius);
+  border: 1px solid var(--tsuku-border);
+  background: var(--tsuku-bg-card);
+  box-shadow: var(--tsuku-shadow);
+}
+
+.tsuku-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--tsuku-btn);
+  color: #fff;
+  font-weight: 600;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+}
+
+.tsuku-btn:hover:not(:disabled) {
+  background: var(--tsuku-btn-hover);
+}
+
+.tsuku-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.tsuku-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tsuku-input {
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 2px solid var(--tsuku-border);
+  background: #fff;
+  padding: 0.875rem 1rem;
+  font-size: 0.9375rem;
+  color: var(--tsuku-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tsuku-input:focus {
+  border-color: var(--tsuku-orange);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+.tsuku-input::placeholder {
+  color: #a8a29e;
 }

@@ -7,6 +7,8 @@ import { CalendarDays, Bell, Plus, X, ChevronLeft, Loader2, CheckCircle2, Trash2
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { Poll } from '@/types'
+import { AppHeader } from '@/components/ui/AppHeader'
+import { PageShell } from '@/components/ui/PageShell'
 
 type Tab = 'polls' | 'announce'
 
@@ -18,13 +20,11 @@ export default function AdminPage() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Poll form
   const [pollTitle, setPollTitle] = useState('')
   const [pollDesc, setPollDesc] = useState('')
   const [candidateDates, setCandidateDates] = useState<string[]>([''])
   const [creatingPoll, setCreatingPoll] = useState(false)
 
-  // Announce form
   const [annTitle, setAnnTitle] = useState('')
   const [annBody, setAnnBody] = useState('')
   const [creatingAnn, setCreatingAnn] = useState(false)
@@ -68,7 +68,6 @@ export default function AdminPage() {
       await supabase.from('poll_options').insert(
         validDates.map((d, i) => ({ poll_id: poll.id, candidate_date: d, sort_order: i }))
       )
-      // お知らせ自動投稿
       await supabase.from('announcements').insert({
         author_id: user!.id,
         title: `📅 予定合わせ開始「${pollTitle}」`,
@@ -117,31 +116,36 @@ export default function AdminPage() {
   }
 
   if (!authorized) return (
-    <div className="flex justify-center py-24">
-      <Loader2 className="animate-spin text-violet-400" size={32} />
-    </div>
+    <PageShell>
+      <div className="flex justify-center py-24">
+        <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={32} />
+      </div>
+    </PageShell>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-10 bg-violet-700 text-white px-4 py-4 flex items-center gap-3">
-        <button onClick={() => router.push('/mypage')} className="p-1.5 rounded-lg hover:bg-violet-600">
-          <ChevronLeft size={20} />
-        </button>
-        <div>
-          <h1 className="font-bold text-base">🛡 管理者パネル</h1>
-          <p className="text-xs text-violet-200">なしまん専用</p>
+    <PageShell noPadding>
+      <header className="sticky top-0 z-10 bg-[var(--tsuku-orange-dark)] px-4 py-4 text-white">
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <button onClick={() => router.push('/mypage')} className="rounded-lg p-1.5 hover:bg-white/10">
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-base font-bold">管理者パネル</h1>
+            <p className="text-xs text-orange-100">なしまん専用</p>
+          </div>
         </div>
       </header>
 
-      {/* Tab */}
-      <div className="flex border-b border-gray-200 bg-white">
-        {([['polls', '📅 予定合わせ'], ['announce', '🔔 お知らせ']] as [Tab, string][]).map(([key, label]) => (
+      <div className="mx-auto flex max-w-md border-b border-[var(--tsuku-border)] bg-white">
+        {([['polls', '予定合わせ'], ['announce', 'お知らせ']] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              tab === key ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-400'
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${
+              tab === key
+                ? 'border-b-2 border-[var(--tsuku-orange)] text-[var(--tsuku-orange-dark)]'
+                : 'text-[var(--tsuku-text-muted)]'
             }`}
           >
             {label}
@@ -149,36 +153,33 @@ export default function AdminPage() {
         ))}
       </div>
 
-      <main className="px-4 py-4 space-y-4">
-
-        {/* ======= 予定合わせタブ ======= */}
+      <main className="mx-auto max-w-md space-y-4 px-4 py-4">
         {tab === 'polls' && (
           <>
-            {/* 新規作成フォーム */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <h3 className="font-bold text-sm text-gray-700 mb-3 flex items-center gap-2">
-                <Plus size={15} className="text-violet-500" /> 新しい予定合わせを作成
+            <div className="tsuku-card p-5">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--tsuku-text)]">
+                <Plus size={15} className="text-[var(--tsuku-orange)]" /> 新しい予定合わせを作成
               </h3>
-              <div className="space-y-2.5">
+              <div className="mt-4 space-y-3">
                 <input
                   type="text"
                   placeholder="タイトル（例: 夏のバーベキュー）"
                   value={pollTitle}
                   onChange={e => setPollTitle(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400"
+                  className="tsuku-input"
                 />
                 <textarea
                   placeholder="説明（任意）"
                   value={pollDesc}
                   onChange={e => setPollDesc(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400 resize-none"
+                  className="tsuku-input resize-none"
                   rows={2}
                 />
                 <div>
-                  <p className="text-xs text-gray-500 mb-1.5 font-medium">候補日</p>
-                  <div className="space-y-1.5">
+                  <p className="mb-2 text-xs font-semibold text-[var(--tsuku-text-muted)]">候補日</p>
+                  <div className="space-y-2">
                     {candidateDates.map((d, i) => (
-                      <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div key={i} className="flex items-center gap-2">
                         <input
                           type="date"
                           value={d}
@@ -187,12 +188,12 @@ export default function AdminPage() {
                             next[i] = e.target.value
                             setCandidateDates(next)
                           }}
-                          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400"
+                          className="tsuku-input flex-1"
                         />
                         {candidateDates.length > 1 && (
                           <button
                             onClick={() => setCandidateDates(d => d.filter((_, j) => j !== i))}
-                            className="p-1.5 text-gray-400 hover:text-red-400"
+                            className="p-1.5 text-stone-400 hover:text-red-400"
                           >
                             <X size={16} />
                           </button>
@@ -201,7 +202,7 @@ export default function AdminPage() {
                     ))}
                     <button
                       onClick={() => setCandidateDates(d => [...d, ''])}
-                      className="text-xs text-violet-600 font-medium flex items-center gap-1 mt-1"
+                      className="mt-1 flex items-center gap-1 text-xs font-semibold text-[var(--tsuku-orange-dark)]"
                     >
                       <Plus size={13} /> 候補日を追加
                     </button>
@@ -210,7 +211,7 @@ export default function AdminPage() {
                 <button
                   onClick={createPoll}
                   disabled={creatingPoll || !pollTitle.trim()}
-                  className="w-full py-3 bg-violet-600 text-white rounded-2xl font-bold text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="tsuku-btn w-full py-3 text-sm"
                 >
                   {creatingPoll ? <Loader2 size={16} className="animate-spin" /> : <CalendarDays size={16} />}
                   作成してお知らせを送る
@@ -218,17 +219,18 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 既存の投票一覧 */}
             {loading ? (
-              <div className="flex justify-center py-8"><Loader2 className="animate-spin text-violet-300" size={24} /></div>
+              <div className="flex justify-center py-8">
+                <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={24} />
+              </div>
             ) : (
               <div className="space-y-2">
                 {polls.map(poll => (
-                  <div key={poll.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div key={poll.id} className="tsuku-card p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-sm text-gray-800">{poll.title}</p>
-                        <span className={`text-xs font-medium ${poll.status === 'open' ? 'text-violet-600' : 'text-gray-400'}`}>
+                        <p className="text-sm font-bold text-[var(--tsuku-text)]">{poll.title}</p>
+                        <span className={`text-xs font-semibold ${poll.status === 'open' ? 'text-[var(--tsuku-orange)]' : 'text-stone-400'}`}>
                           {poll.status === 'open' ? '● 募集中' : '✅ 確定済み'}
                         </span>
                       </div>
@@ -239,12 +241,12 @@ export default function AdminPage() {
                               const date = prompt('確定日を入力 (YYYY-MM-DD)')
                               if (date) closePoll(poll.id, date)
                             }}
-                            className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-lg font-medium flex items-center gap-1"
+                            className="flex items-center gap-1 rounded-lg bg-[var(--tsuku-green-light)] px-2.5 py-1 text-xs font-semibold text-[var(--tsuku-green)]"
                           >
                             <CheckCircle2 size={12} /> 確定
                           </button>
                         )}
-                        <button onClick={() => deletePoll(poll.id)} className="p-1.5 text-gray-300 hover:text-red-400">
+                        <button onClick={() => deletePoll(poll.id)} className="p-1.5 text-stone-300 hover:text-red-400">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -256,31 +258,30 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* ======= お知らせタブ ======= */}
         {tab === 'announce' && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <h3 className="font-bold text-sm text-gray-700 mb-3 flex items-center gap-2">
-              <Bell size={15} className="text-violet-500" /> お知らせを投稿
+          <div className="tsuku-card p-5">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--tsuku-text)]">
+              <Bell size={15} className="text-[var(--tsuku-orange)]" /> お知らせを投稿
             </h3>
-            <div className="space-y-2.5">
+            <div className="mt-4 space-y-3">
               <input
                 type="text"
                 placeholder="タイトル"
                 value={annTitle}
                 onChange={e => setAnnTitle(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400"
+                className="tsuku-input"
               />
               <textarea
                 placeholder="内容（任意）"
                 value={annBody}
                 onChange={e => setAnnBody(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-400 resize-none"
+                className="tsuku-input resize-none"
                 rows={4}
               />
               <button
                 onClick={createAnnouncement}
                 disabled={creatingAnn || !annTitle.trim()}
-                className="w-full py-3 bg-violet-600 text-white rounded-2xl font-bold text-sm disabled:opacity-60 flex items-center justify-center gap-2"
+                className="tsuku-btn w-full py-3 text-sm"
               >
                 {creatingAnn ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
                 みんなに知らせる
@@ -289,7 +290,7 @@ export default function AdminPage() {
           </div>
         )}
       </main>
-    </div>
+    </PageShell>
   )
 }
 

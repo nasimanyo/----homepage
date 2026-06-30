@@ -7,6 +7,8 @@ import { Poll, PollOption, Vote, Profile } from '@/types'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ArrowLeft, Check, X, Minus, Loader2, Trophy } from 'lucide-react'
+import { AppHeader } from '@/components/ui/AppHeader'
+import { PageShell } from '@/components/ui/PageShell'
 
 type VoteAnswer = 'ok' | 'ng' | 'maybe'
 
@@ -57,7 +59,6 @@ export default function PollDetailPage() {
     setVotes(v)
     setProfiles(profileRes.data || [])
 
-    // my existing votes
     const mine: Record<string, VoteAnswer> = {}
     v.filter(vote => vote.voter_id === user.id).forEach(vote => {
       mine[vote.option_id] = vote.answer as VoteAnswer
@@ -84,59 +85,66 @@ export default function PollDetailPage() {
     setSaving(false)
   }
 
-  function getVotesForOption(optionId: string) {
-    return votes.filter(v => v.option_id === optionId)
-  }
-
   function countAnswer(optionId: string, answer: VoteAnswer) {
     return votes.filter(v => v.option_id === optionId && v.answer === answer).length
   }
 
   if (loading) return (
-    <div className="flex justify-center py-24">
-      <Loader2 className="animate-spin text-violet-400" size={32} />
-    </div>
+    <PageShell>
+      <div className="flex justify-center py-24">
+        <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={32} />
+      </div>
+    </PageShell>
   )
 
-  if (!poll) return <div className="p-8 text-center text-gray-400">見つかりませんでした</div>
+  if (!poll) return (
+    <PageShell>
+      <p className="py-12 text-center text-[var(--tsuku-text-muted)]">見つかりませんでした</p>
+    </PageShell>
+  )
 
   const isClosed = poll.status === 'closed'
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-gray-100">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="flex-1">
-          <h1 className="font-bold text-gray-900 text-sm">{poll.title}</h1>
-          {isClosed && poll.decided_at && (
-            <p className="text-xs text-green-600 font-medium">
-              ✅ {format(new Date(poll.decided_at), 'M月d日(E)', { locale: ja })} に確定！
-            </p>
+    <PageShell noPadding>
+      <header className="sticky top-0 z-10 border-b border-[var(--tsuku-border)] bg-[var(--tsuku-bg)]/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <button onClick={() => router.back()} className="rounded-xl p-2 hover:bg-stone-100">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="truncate text-sm font-bold text-[var(--tsuku-text)]">{poll.title}</h1>
+            {isClosed && poll.decided_at && (
+              <p className="text-xs font-semibold text-[var(--tsuku-green)]">
+                {format(new Date(poll.decided_at), 'M月d日(E)', { locale: ja })} に確定！
+              </p>
+            )}
+          </div>
+          {isClosed && (
+            <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500">
+              締切済み
+            </span>
           )}
         </div>
-        {isClosed && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">締切済み</span>}
       </header>
 
-      <main className="px-4 py-4">
+      <main className="mx-auto max-w-md px-4 py-4">
         {poll.description && (
-          <p className="text-sm text-gray-500 mb-4 bg-gray-50 rounded-xl p-3">{poll.description}</p>
+          <p className="mb-4 rounded-xl bg-stone-50 p-3 text-sm text-[var(--tsuku-text-muted)]">{poll.description}</p>
         )}
 
-        {/* 集計テーブル */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+        <div className="tsuku-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium min-w-[90px]">日付</th>
+                <tr className="border-b border-[var(--tsuku-border)] bg-stone-50">
+                  <th className="min-w-[90px] px-3 py-2 text-left font-semibold text-[var(--tsuku-text-muted)]">日付</th>
                   {profiles.map(p => (
-                    <th key={p.id} className="px-2 py-2 text-center text-gray-500 font-medium min-w-[44px]">
+                    <th key={p.id} className="min-w-[44px] px-2 py-2 text-center font-semibold text-[var(--tsuku-text-muted)]">
                       {p.display_name.slice(0, 3)}
                     </th>
                   ))}
-                  <th className="px-2 py-2 text-center text-gray-500 font-medium min-w-[44px]">○</th>
+                  <th className="min-w-[44px] px-2 py-2 text-center font-semibold text-[var(--tsuku-text-muted)]">○</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,9 +152,9 @@ export default function PollDetailPage() {
                   const okCount = countAnswer(opt.id, 'ok')
                   const isDecided = isClosed && poll.decided_at === opt.candidate_date
                   return (
-                    <tr key={opt.id} className={`border-b border-gray-50 ${isDecided ? 'bg-green-50' : ''}`}>
-                      <td className="px-3 py-2.5 font-medium text-gray-800">
-                        {isDecided && <Trophy size={12} className="inline mr-1 text-green-500" />}
+                    <tr key={opt.id} className={`border-b border-stone-50 ${isDecided ? 'bg-[var(--tsuku-green-light)]' : ''}`}>
+                      <td className="px-3 py-2.5 font-semibold text-[var(--tsuku-text)]">
+                        {isDecided && <Trophy size={12} className="mr-1 inline text-[var(--tsuku-green)]" />}
                         {format(new Date(opt.candidate_date), 'M/d(E)', { locale: ja })}
                       </td>
                       {profiles.map(p => {
@@ -158,15 +166,15 @@ export default function PollDetailPage() {
                         if (isMe && !isClosed) {
                           return (
                             <td key={p.id} className="px-1 py-1.5 text-center">
-                              <div className="flex gap-0.5 justify-center">
+                              <div className="flex justify-center gap-0.5">
                                 {(['ok', 'maybe', 'ng'] as VoteAnswer[]).map(ans => (
                                   <button
                                     key={ans}
                                     onClick={() => toggleVote(opt.id, ans)}
-                                    className={`w-7 h-7 rounded-lg border text-xs font-bold transition-all ${
+                                    className={`h-7 w-7 rounded-lg border text-xs font-bold transition-all ${
                                       myAnswer === ans
                                         ? answerConfig[ans].color + ' border-current'
-                                        : 'bg-gray-50 text-gray-300 border-gray-200 hover:bg-gray-100'
+                                        : 'border-stone-200 bg-stone-50 text-stone-300 hover:bg-stone-100'
                                     }`}
                                   >
                                     {answerConfig[ans].label}
@@ -180,17 +188,17 @@ export default function PollDetailPage() {
                         return (
                           <td key={p.id} className="px-2 py-2 text-center">
                             {displayAnswer ? (
-                              <span className={`inline-block w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center ${answerConfig[displayAnswer as VoteAnswer]?.color}`}>
+                              <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold ${answerConfig[displayAnswer as VoteAnswer]?.color}`}>
                                 {answerConfig[displayAnswer as VoteAnswer]?.label}
                               </span>
                             ) : (
-                              <span className="text-gray-200">—</span>
+                              <span className="text-stone-200">—</span>
                             )}
                           </td>
                         )
                       })}
                       <td className="px-2 py-2 text-center">
-                        <span className={`font-bold ${okCount >= 2 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <span className={`font-bold ${okCount >= 2 ? 'text-[var(--tsuku-green)]' : 'text-stone-400'}`}>
                           {okCount}
                         </span>
                       </td>
@@ -206,14 +214,14 @@ export default function PollDetailPage() {
           <button
             onClick={submitVotes}
             disabled={saving}
-            className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-bold text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="tsuku-btn mt-4 w-full py-3.5 text-sm"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             投票を保存する
           </button>
         )}
       </main>
-    </div>
+    </PageShell>
   )
 }
 export const dynamic = 'force-dynamic'

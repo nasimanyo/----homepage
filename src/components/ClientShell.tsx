@@ -46,20 +46,22 @@ export function BottomNav() {
   if (hideNav) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-1 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6 md:px-8">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--tsuku-border)] bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-lg items-center gap-1 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
-              className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] leading-tight transition-colors sm:text-xs ${
-                active ? 'bg-violet-50 text-violet-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+              className={`flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-2 text-[10px] leading-tight transition-colors ${
+                active
+                  ? 'bg-[var(--tsuku-orange-light)] text-[var(--tsuku-orange-dark)]'
+                  : 'text-[var(--tsuku-text-muted)] hover:bg-stone-50'
               }`}
             >
-              <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
-              <span className={active ? 'font-semibold' : 'font-medium'}>{label}</span>
+              <Icon size={20} strokeWidth={active ? 2.4 : 1.8} />
+              <span className={active ? 'font-bold' : 'font-medium'}>{label}</span>
             </Link>
           )
         })}
