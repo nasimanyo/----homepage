@@ -15,7 +15,6 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const router = useRouter()
   const supabase = typeof window === 'undefined' ? null : createClient()
 
@@ -99,81 +98,82 @@ export default function MyPage() {
       <AppHeader />
 
       <section className="tsuku-card mt-3 p-3 sm:p-4">
-        <div className="text-center">
-          <p className="text-base font-bold text-[var(--tsuku-text)] sm:text-lg">
-            Hello!! {profile?.display_name || 'ユーザー'} さん
-          </p>
-          <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--tsuku-orange-light)] px-4 py-1.5">
-            <Sparkles size={15} className="text-[var(--tsuku-orange)]" />
-            <span className="text-sm font-bold text-[var(--tsuku-text)]">
-              つくポイント {profile?.points ?? 0} pt
-            </span>
-          </div>
-          {profile?.is_admin && (
-            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--tsuku-text-muted)]">
-              <ShieldCheck size={11} /> 管理者
-            </span>
-          )}
-        </div>
+        <div className="grid gap-4 lg:grid-cols-[1.4fr,0.8fr]">
+          <div className="space-y-4">
+            <div className="space-y-3 text-center lg:text-left">
+              <p className="text-lg font-bold text-[var(--tsuku-text)] sm:text-xl">
+                こんにちは、{profile?.display_name || 'ユーザー'} さん
+              </p>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--tsuku-orange-light)] px-4 py-2 text-sm font-semibold text-[var(--tsuku-text)]">
+                <Sparkles size={16} className="text-[var(--tsuku-orange)]" />
+                つくポイント {profile?.points ?? 0} pt
+              </div>
+              {profile?.is_admin && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold text-[var(--tsuku-text-muted)]">
+                  <ShieldCheck size={12} /> 管理者
+                </span>
+              )}
+            </div>
 
-        <div className="-mb-6 mt-0 flex justify-center sm:-mb-8">
-          <Mascot size="hero" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-stone-50 p-4 text-sm text-[var(--tsuku-text-muted)]">
+                <p className="font-semibold text-[var(--tsuku-text)]">表示名</p>
+                <p className="mt-2 break-words text-[var(--tsuku-text)]">{profile?.display_name || '-'}</p>
+              </div>
+              <div className="rounded-2xl bg-stone-50 p-4 text-sm text-[var(--tsuku-text-muted)]">
+                <p className="font-semibold text-[var(--tsuku-text)]">操作</p>
+                <p className="mt-2">ここから表示名の変更やログアウトができます。</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-center">
+            <Mascot size="xl" />
+          </div>
         </div>
       </section>
 
-      <button
-        type="button"
-        onClick={() => setShowSettings(!showSettings)}
-        className="tsuku-card mt-2.5 flex w-full items-center justify-center gap-2 p-3 text-sm font-semibold text-[var(--tsuku-text)] transition hover:bg-stone-50"
-      >
-        <Settings size={16} className="text-[var(--tsuku-text-muted)]" />
-        詳細設定
-      </button>
-
-      {showSettings && (
-        <section className="tsuku-card mt-2.5 space-y-3 p-3.5 sm:p-4">
-          <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-3">
-            <h3 className="text-sm font-bold text-[var(--tsuku-text)]">表示名を変更</h3>
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="tsuku-input flex-1"
-                placeholder="新しい表示名"
-              />
-              <button
-                onClick={saveName}
-                disabled={saving || editName === profile?.display_name}
-                className="tsuku-btn px-4 py-2.5 text-sm"
-              >
-                {saving ? '保存中...' : '保存'}
-              </button>
-            </div>
+      <section className="tsuku-card mt-3 space-y-4 p-3.5 sm:p-4">
+        <div className="rounded-xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+          <h3 className="text-sm font-bold text-[var(--tsuku-text)]">表示名を変更</h3>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="tsuku-input flex-1"
+              placeholder="新しい表示名"
+            />
+            <button
+              onClick={saveName}
+              disabled={saving || editName === profile?.display_name}
+              className="tsuku-btn px-4 py-2.5 text-sm"
+            >
+              {saving ? '保存中...' : '保存'}
+            </button>
           </div>
+        </div>
 
-          {profile?.is_admin && (
-            <Link href="/admin" className="block">
-              <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-3 transition hover:shadow-md">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={16} className="text-[var(--tsuku-orange-dark)]" />
-                  <div>
-                    <p className="text-sm font-bold text-[var(--tsuku-text)]">管理者パネルを開く</p>
-                    <p className="text-xs text-[var(--tsuku-text-muted)]">予定合わせの作成やお知らせ投稿</p>
-                  </div>
+        {profile?.is_admin && (
+          <Link href="/admin" className="block">
+            <div className="rounded-xl border-2 border-[var(--tsuku-orange)] bg-[var(--tsuku-orange-light)] p-4 transition hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <ShieldCheck size={16} className="text-[var(--tsuku-orange-dark)]" />
+                <div>
+                  <p className="text-sm font-bold text-[var(--tsuku-text)]">管理者パネルを開く</p>
+                  <p className="text-xs text-[var(--tsuku-text-muted)]">予定合わせの作成やお知らせ投稿</p>
                 </div>
               </div>
-            </Link>
-          )}
+            </div>
+          </Link>
+        )}
 
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-100"
-          >
-            <LogOut size={16} /> ログアウト
-          </button>
-        </section>
-      )}
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-100"
+        >
+          <LogOut size={16} /> ログアウト
+        </button>
+      </section>
       </div>
     </PageShell>
   )
