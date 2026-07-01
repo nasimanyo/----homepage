@@ -46,6 +46,11 @@ export default function HomePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>('default')
   const [countdown, setCountdown] = useState<{ title: string; dateLabel: string; remaining: string } | null>(null)
+  const [questionSubject, setQuestionSubject] = useState('')
+  const [questionMessage, setQuestionMessage] = useState('')
+  const [questionContact, setQuestionContact] = useState('')
+  const [questionSubmitting, setQuestionSubmitting] = useState(false)
+  const [questionNotice, setQuestionNotice] = useState<string | null>(null)
 
   const hasLoadedAnnouncementsRef = useRef(false)
   const lastNotifiedIdsRef = useRef<string[]>([])
@@ -244,6 +249,39 @@ export default function HomePage() {
     window.setTimeout(() => setMemoSaved(false), 1600)
   }
 
+  async function handleQuestionSubmit() {
+    if (!supabase) return
+
+    const subject = questionSubject.trim()
+    const message = questionMessage.trim()
+
+    if (!subject || !message) {
+      setQuestionNotice('件名と内容を入力してください。')
+      return
+    }
+
+    setQuestionSubmitting(true)
+    setQuestionNotice(null)
+
+    const { error } = await supabase.from('contact_messages').insert({
+      subject,
+      message,
+      contact: questionContact.trim() || null,
+    })
+
+    setQuestionSubmitting(false)
+
+    if (error) {
+      setQuestionNotice('送信に失敗しました。時間をおいてもう一度お試しください。')
+      return
+    }
+
+    setQuestionSubject('')
+    setQuestionMessage('')
+    setQuestionContact('')
+    setQuestionNotice('運営に送信しました。ありがとうございます。')
+  }
+
   function toggleFavorite(id: string) {
     const next = favorites.includes(id)
       ? favorites.filter((favoriteId) => favoriteId !== id)
@@ -373,6 +411,70 @@ export default function HomePage() {
         )}
       </section>
       </div>
+
+      <section className="mt-4 tsuku-card p-5 sm:p-6">
+        <div className="flex items-center gap-2">
+          <Info size={18} className="text-[var(--tsuku-orange)]" />
+          <h2 className="text-base font-bold text-[var(--tsuku-text)]">運営に質問</h2>
+        </div>
+        <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">
+          予定やイベント、サイトの使い方など気になることがあれば送ってください。
+        </p>
+
+        <div className="mt-4 space-y-3">
+          <input
+            type="text"
+            value={questionSubject}
+            onChange={(e) => {
+              setQuestionSubject(e.target.value)
+              setQuestionNotice(null)
+            }}
+            placeholder="件名"
+            className="tsuku-input"
+          />
+          <textarea
+            value={questionMessage}
+            onChange={(e) => {
+              setQuestionMessage(e.target.value)
+              setQuestionNotice(null)
+            }}
+            placeholder="問い合わせ内容"
+            className="tsuku-input min-h-[110px] resize-none"
+          />
+          <input
+            type="text"
+            value={questionContact}
+            onChange={(e) => {
+              setQuestionContact(e.target.value)
+              setQuestionNotice(null)
+            }}
+            placeholder="連絡先（任意）"
+            className="tsuku-input"
+          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-[var(--tsuku-text-muted)]">※ 返信が必要な場合は連絡先を入れてください。</p>
+            <button
+              type="button"
+              onClick={handleQuestionSubmit}
+              disabled={questionSubmitting}
+              className="tsuku-btn px-4 py-2.5 text-sm"
+            >
+              {questionSubmitting ? '送信中...' : '送信する'}
+            </button>
+          </div>
+          {questionNotice && (
+            <p
+              className={`rounded-xl px-3 py-2 text-sm ${
+                questionNotice.includes('失敗')
+                  ? 'bg-rose-50 text-rose-600'
+                  : 'bg-[var(--tsuku-green-light)] text-[var(--tsuku-green)]'
+              }`}
+            >
+              {questionNotice}
+            </p>
+          )}
+        </div>
+      </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2 lg:gap-6">
       {/* お気に入り */}

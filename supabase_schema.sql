@@ -72,6 +72,17 @@ create table if not exists info_posts (
   created_at timestamptz not null default now()
 );
 
+-- ⑦ 運営への問い合わせ
+create table if not exists contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid references profiles(id) on delete set null,
+  subject text not null,
+  message text not null,
+  contact text,
+  status text not null default 'new',
+  created_at timestamptz not null default now()
+);
+
 -- ============================================================
 -- RLS (Row Level Security)
 -- ============================================================
@@ -81,6 +92,7 @@ alter table polls enable row level security;
 alter table poll_options enable row level security;
 alter table votes enable row level security;
 alter table info_posts enable row level security;
+alter table contact_messages enable row level security;
 
 -- profiles: 誰でも読める、自分だけ更新
 drop policy if exists profiles_select on profiles;
@@ -156,7 +168,8 @@ create policy "info_delete" on info_posts for delete using (
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_publication_rel pr
+    SELECT 1 FROM pg_publi
+    cation_rel pr
     JOIN pg_publication p ON pr.prpubid = p.oid
     WHERE p.pubname = 'supabase_realtime' AND pr.prrelid = 'public.announcements'::regclass
   ) THEN
