@@ -226,15 +226,15 @@ export default function HomePage() {
     setPointNotice(null)
     setRouletteLoading(true)
 
-    const spinPromise = triggerWheelSpin(wheelRotation, setWheelSpinning, setWheelRotation)
-    const apiPromise = callPointsApi(supabase, 'roulette')
-    const [, data] = await Promise.all([spinPromise, apiPromise])
+    const data = await callPointsApi(supabase, 'roulette')
 
     if ('error' in data) {
       setPointNotice(data.error)
       setRouletteLoading(false)
       return
     }
+
+    await triggerWheelSpin(wheelRotation, setWheelSpinning, setWheelRotation, data.spin ?? 0)
 
     setPointNotice(`ルーレットで ${data.spin ?? 0}pt を獲得しました！`)
     setProfile((prev) =>

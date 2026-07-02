@@ -156,6 +156,18 @@ create policy "info_delete" on info_posts for delete using (
   auth.uid() = author_id or exists(select 1 from profiles where id=auth.uid() and is_admin)
 );
 
+-- contact_messages: 管理者だけ閲覧・更新、誰でも投稿可
+drop policy if exists contact_messages_select on contact_messages;
+drop policy if exists contact_messages_insert on contact_messages;
+drop policy if exists contact_messages_update on contact_messages;
+create policy "contact_messages_select" on contact_messages for select using (
+  exists(select 1 from profiles where id=auth.uid() and is_admin)
+);
+create policy "contact_messages_insert" on contact_messages for insert with check (true);
+create policy "contact_messages_update" on contact_messages for update using (
+  exists(select 1 from profiles where id=auth.uid() and is_admin)
+);
+
 -- ============================================================
 -- 管理者ユーザーの設定（サインアップ後に実行）
 -- <YOUR_USER_ID> をあなたの auth.users の UUID に置き換えてください
@@ -168,8 +180,8 @@ create policy "info_delete" on info_posts for delete using (
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_publi
-    cation_rel pr
+    SELECT 1
+    FROM pg_publication_rel pr
     JOIN pg_publication p ON pr.prpubid = p.oid
     WHERE p.pubname = 'supabase_realtime' AND pr.prrelid = 'public.announcements'::regclass
   ) THEN

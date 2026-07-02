@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '今日のルーレットはすでにプレイ済みです' }, { status: 400 })
   }
 
-  const spin = Math.floor(Math.random() * 100) + 1
+  const rewardOptions = [10, 25, 50, 75, 100, 30, 15, 40]
+  const spin = rewardOptions[Math.floor(Math.random() * rewardOptions.length)]
   const { data, error } = await supabase
     .from('profiles')
     .update({

@@ -88,17 +88,34 @@ function waitForNextFrame() {
   })
 }
 
+export function getRouletteTargetRotation(selectedValue: number, currentRotation: number) {
+  const segmentIndex = SEGMENTS.findIndex((segment) => Number(segment.label) === selectedValue)
+  if (segmentIndex < 0) {
+    return currentRotation + 1800 + Math.random() * 360
+  }
+
+  const segmentAngle = 360 / SEGMENTS.length
+  const pointerAngle = -90
+  const midAngle = (segmentIndex + 0.5) * segmentAngle + pointerAngle
+  const normalizedCurrentRotation = ((currentRotation % 360) + 360) % 360
+  const currentOffset = (normalizedCurrentRotation + midAngle) % 360
+  const correction = (pointerAngle - currentOffset + 360) % 360
+
+  return normalizedCurrentRotation + 1800 + Math.random() * 360 + correction
+}
+
 export async function triggerWheelSpin(
   currentRotation: number,
   setSpinning: (v: boolean) => void,
   setRotation: (v: number | ((prev: number) => number)) => void,
+  selectedValue: number,
 ) {
   setSpinning(false)
   setRotation(currentRotation % 360)
   await waitForNextFrame()
-  const extra = 1800 + Math.random() * 360
+  const targetRotation = getRouletteTargetRotation(selectedValue, currentRotation % 360)
   setSpinning(true)
-  setRotation((prev) => prev + extra)
+  setRotation(targetRotation)
   await new Promise((resolve) => setTimeout(resolve, SPIN_DURATION_MS))
   setSpinning(false)
 }
