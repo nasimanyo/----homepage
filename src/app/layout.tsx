@@ -1,4 +1,5 @@
 import './globals.css'
+import Script from 'next/script'
 import { BottomNav, PageTracker } from '@/components/ClientShell'
 
 export const viewport = {
@@ -15,6 +16,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <BottomNav />
+
+        <Script id="dify-chatbot-config" strategy="afterInteractive">
+          {`
+            window.difyChatbotConfig = {
+              token: 'aFQNk8g040iuBLZT',
+              inputs: {},
+              systemVariables: {},
+              userVariables: {},
+            }
+          `}
+        </Script>
+        <Script
+          src="https://udify.app/embed.min.js"
+          id="aFQNk8g040iuBLZT"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
