@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 
 export function DifyChatbot() {
   useEffect(() => {
-    // 既に追加済みなら二重に追加しない
     if (document.getElementById('aFQNk8g040iuBLZT')) return
 
     // @ts-expect-error window拡張
@@ -13,6 +12,7 @@ export function DifyChatbot() {
       inputs: {},
       systemVariables: {},
       userVariables: {},
+      dynamicScript: true, // ← これを追加：動的挿入なので即時実行モードにする
     }
 
     const script = document.createElement('script')
