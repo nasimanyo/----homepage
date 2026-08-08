@@ -3,10 +3,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CalendarDays, Bell, Plus, X, ChevronLeft, Loader2, CheckCircle2, Trash2, QrCode, Sparkles, ShieldCheck } from 'lucide-react'
+import { CalendarDays, Bell, Plus, X, ChevronLeft, Loader2, CheckCircle2, Trash2, QrCode, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { Poll, Profile } from '@/types'
+import { Poll } from '@/types'
 import { PageShell } from '@/components/ui/PageShell'
 
 type Tab = 'polls' | 'announce' | 'members'
@@ -25,9 +25,6 @@ export default function AdminPageClient() {
   })
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
-  const [members, setMembers] = useState<Profile[]>([])
-  const [grantAmounts, setGrantAmounts] = useState<Record<string, number>>({})
-  const [grantingMemberId, setGrantingMemberId] = useState<string | null>(null)
   const [pollTitle, setPollTitle] = useState('')
   const [pollDesc, setPollDesc] = useState('')
   const [candidateDates, setCandidateDates] = useState<string[]>([''])
@@ -61,7 +58,6 @@ export default function AdminPageClient() {
       setAuthorized(true)
       setCheckingAuth(false)
       await fetchPolls()
-      await fetchMembers()
       return
     }
 
@@ -76,17 +72,6 @@ export default function AdminPageClient() {
     setLoading(false)
   }
 
-  async function fetchMembers() {
-    if (!supabase) return
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, points, is_admin, created_at')
-      .order('created_at', { ascending: false })
-
-    const nextMembers = (data as Profile[]) || []
-    setMembers(nextMembers)
-  }
-
   async function tryAdminPassword(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault()
     if (adminPassword === 'nasimanyo') {
@@ -95,56 +80,10 @@ export default function AdminPageClient() {
       setAuthorized(true)
       setCheckingAuth(false)
       await fetchPolls()
-      await fetchMembers()
       return
     }
 
     setPasswordError('パスワードが違います')
-  }
-
-  async function grantMemberPoints(memberId: string) {
-    if (!supabase) return
-    setGrantingMemberId(memberId)
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      alert('ログインしてください')
-      setGrantingMemberId(null)
-      return
-    }
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    const passwordAllowed = profileData?.is_admin || sessionStorage.getItem('tsuku-admin-password') === 'nasimanyo'
-    if (!passwordAllowed) {
-      alert('管理者パスワードが必要です')
-      setGrantingMemberId(null)
-      return
-    }
-
-    const { data: targetProfile } = await supabase
-      .from('profiles')
-      .select('points')
-      .eq('id', memberId)
-      .maybeSingle()
-
-    if (!targetProfile) {
-      alert('対象会員が見つかりません')
-      setGrantingMemberId(null)
-      return
-    }
-
-    const rawAmount = grantAmounts[memberId]
-    const amount = Number.isInteger(rawAmount) && rawAmount > 0 ? rawAmount : 1
-    const nextPoints = (targetProfile.points ?? 0) + amount
-    await supabase.from('profiles').update({ points: nextPoints }).eq('id', memberId)
-    setMembers(prev => prev.map(member => member.id === memberId ? { ...member, points: nextPoints } : member))
-    setGrantingMemberId(null)
-    alert(`${amount}ポイントを付与しました`)
   }
 
   async function createPoll() {
@@ -418,46 +357,12 @@ export default function AdminPageClient() {
                 <QrCode size={16} className="text-[var(--tsuku-orange)]" />
                 <h3 className="text-sm font-bold text-[var(--tsuku-text)]">会員QRでポイント付与</h3>
               </div>
-              <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">QRコードを一覧で表示せず、カメラで読み取ってポイントを付与します。</p>
+              <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">会員のQRコードをカメラで読み取るだけで、QRに埋め込まれた付与ポイント数が反映されます。</p>
               <div className="mt-4">
                 <a href="/scan" className="inline-flex items-center justify-center rounded-xl bg-[var(--tsuku-orange-light)] px-4 py-2 text-sm font-semibold text-[var(--tsuku-orange-dark)]">
                   <QrCode size={16} className="mr-2" /> カメラで読み取る
                 </a>
               </div>
-            </div>
-            <div className="space-y-2">
-              {members.map(member => (
-                <div key={member.id} className="tsuku-card p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-bold text-[var(--tsuku-text)]">{member.display_name}</p>
-                      {member.username && (
-                        <p className="text-xs text-[var(--tsuku-text-muted)]">@{member.username}</p>
-                      )}
-                      <div className="mt-1 flex items-center gap-2 text-xs text-[var(--tsuku-text-muted)]">
-                        <Sparkles size={12} className="text-[var(--tsuku-orange)]" />
-                        <span>{member.points ?? 0} pt</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={1}
-                        value={grantAmounts[member.id] ?? 1}
-                        onChange={(e) => setGrantAmounts(prev => ({ ...prev, [member.id]: Number(e.target.value) }))}
-                        className="w-24 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-[var(--tsuku-text)]"
-                      />
-                      <button
-                        onClick={() => grantMemberPoints(member.id)}
-                        disabled={grantingMemberId === member.id}
-                        className="rounded-xl bg-[var(--tsuku-orange-light)] px-3 py-2 text-xs font-semibold text-[var(--tsuku-orange-dark)]"
-                      >
-                        {grantingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : '付与'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}
