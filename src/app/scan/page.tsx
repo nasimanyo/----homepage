@@ -1,10 +1,10 @@
 import { Suspense } from 'react'
-import AdminPageClient from './AdminPageClient'
+import ScanPageClient from './ScanPageClient'
 
-export default function AdminPage() {
+export default function ScanPage() {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center">読み込み中...</div>}>
-      <AdminPageClient />
+      <ScanPageClient />
     </Suspense>
   )
 }

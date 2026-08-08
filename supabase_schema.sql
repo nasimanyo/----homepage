@@ -100,7 +100,11 @@ drop policy if exists profiles_insert on profiles;
 drop policy if exists profiles_update on profiles;
 create policy "profiles_select" on profiles for select using (true);
 create policy "profiles_insert" on profiles for insert with check (auth.uid() = id);
-create policy "profiles_update" on profiles for update using (auth.uid() = id);
+create policy "profiles_update" on profiles for update using (
+  auth.uid() = id or exists(select 1 from profiles where id=auth.uid() and is_admin)
+) with check (
+  auth.uid() = id or exists(select 1 from profiles where id=auth.uid() and is_admin)
+);
 
 -- announcements: 誰でも読める、ログイン済みは投稿
 drop policy if exists announcements_select on announcements;
