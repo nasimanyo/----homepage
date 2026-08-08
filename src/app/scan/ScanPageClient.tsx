@@ -126,10 +126,15 @@ export default function ScanPageClient() {
     }
   }, [router, supabase, processing])
 
-  function parseScanUrl(text: string) {
+  function parseScanUrl(text: string | { data?: string } | null | undefined) {
+    const raw = typeof text === 'string' ? text : text?.data
+    if (!raw || typeof raw !== 'string') return null
+
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+
     try {
-      const url = new URL(text, window.location.origin)
-      if (url.origin !== window.location.origin) return null
+      const url = new URL(trimmed, window.location.origin)
       if (url.pathname !== '/scan') return null
       const memberId = url.searchParams.get('memberId')
       const amountCandidate = Number(url.searchParams.get('amount') ?? '1')
