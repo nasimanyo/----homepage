@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Loader2, ScanLine, XCircle } from 'lucide-react'
 import { PageShell } from '@/components/ui/PageShell'
+import type { Profile } from '@/types'
 
 export default function ScanPageClient() {
   const router = useRouter()
@@ -14,9 +15,14 @@ export default function ScanPageClient() {
   const [status, setStatus] = useState('カメラを起動中...')
   const [processing, setProcessing] = useState(false)
   const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
+  const [scannedAmount, setScannedAmount] = useState(1)
+  const [operateAmount, setOperateAmount] = useState(1)
+  const [actionStatus, setActionStatus] = useState('')
+  const [scanActive, setScanActive] = useState(true)
 
   useEffect(() => {
-    if (!supabase) return
+    if (!supabase || !scanActive) return
 
     const client = supabase
     let isMounted = true
@@ -46,7 +52,7 @@ export default function ScanPageClient() {
 
       if (!isMounted) return
       setAuthorized(true)
-      setStatus('QRコードを読み取るとポイントが付与されます。')
+      setStatus('QRコードを読み取ると会員管理画面が表示されます。')
 
       try {
         const QrScanner = await import('qr-scanner')
@@ -70,37 +76,28 @@ export default function ScanPageClient() {
             }
 
             const { memberId, amount } = parsed
-            setStatus('読み取り成功。ポイント付与中...')
             scanner.stop()
+            setScanActive(false)
+            setStatus('読み取り成功。会員データを読み込んでいます...')
 
             const { data: targetProfile, error: profileError } = await client
               .from('profiles')
-              .select('points')
+              .select('id, username, display_name, points, is_admin, created_at')
               .eq('id', memberId)
               .maybeSingle()
 
             if (profileError || !targetProfile) {
               setStatus('対象会員の取得に失敗しました。')
               setProcessing(false)
-              scanner.start()
+              setScanActive(true)
               return
             }
 
-            const nextPoints = (targetProfile.points ?? 0) + amount
-            const { error: updateError } = await client
-              .from('profiles')
-              .update({ points: nextPoints })
-              .eq('id', memberId)
-
-            if (updateError) {
-              setStatus('ポイント付与に失敗しました。')
-              setProcessing(false)
-              scanner.start()
-              return
-            }
-
-            setStatus(`${amount}ポイントを付与しました！`)    
-            setTimeout(() => router.push('/admin?tab=members'), 1000)
+            setSelectedProfile(targetProfile)
+            setScannedAmount(amount)
+            setOperateAmount(amount > 0 ? amount : 1)
+            setStatus('会員を読み込みました。操作してください。')
+            setProcessing(false)
           },
           {
             highlightScanRegion: true,
@@ -124,7 +121,7 @@ export default function ScanPageClient() {
       scannerRef.current?.destroy()
       scannerRef.current = null
     }
-  }, [router, supabase, processing])
+  }, [router, supabase, scanActive, processing])
 
   function parseScanUrl(text: string | { data?: string } | null | undefined) {
     const raw = typeof text === 'string' ? text : text?.data
@@ -146,22 +143,136 @@ export default function ScanPageClient() {
     }
   }
 
+  async function updateProfilePoints(nextPoints: number) {
+    if (!supabase || !selectedProfile) return false
+    const { error } = await supabase
+      .from('profiles')
+      .update({ points: nextPoints })
+      .eq('id', selectedProfile.id)
+    if (error) {
+      setActionStatus('ポイント更新に失敗しました。')
+      return false
+    }
+    setSelectedProfile({ ...selectedProfile, points: nextPoints })
+    return true
+  }
+
+  async function addPoints() {
+    if (!selectedProfile || !supabase) return
+    const nextPoints = (selectedProfile.points ?? 0) + operateAmount
+    setActionStatus('ポイント付与中...')
+    const success = await updateProfilePoints(nextPoints)
+    if (success) {
+      setActionStatus(`${operateAmount}ポイントを追加しました。現在 ${nextPoints} pt`)    
+    }
+  }
+
+  async function setPoints() {
+    if (!selectedProfile || !supabase) return
+    const nextPoints = operateAmount >= 0 ? operateAmount : 0
+    setActionStatus('ポイントを設定中...')
+    const success = await updateProfilePoints(nextPoints)
+    if (success) {
+      setActionStatus(`ポイントを ${nextPoints} pt に設定しました。`)
+    }
+  }
+
+  async function resetPoints() {
+    if (!selectedProfile || !supabase) return
+    setActionStatus('ポイントをリセット中...')
+    const success = await updateProfilePoints(0)
+    if (success) {
+      setActionStatus('ポイントを 0 pt にリセットしました。')
+      setOperateAmount(0)
+    }
+  }
+
+  function restartScan() {
+    setSelectedProfile(null)
+    setScannedAmount(1)
+    setOperateAmount(1)
+    setActionStatus('カメラを再起動しています...')
+    setStatus('カメラを起動中...')
+    setScanActive(true)
+  }
+
   return (
     <PageShell>
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center rounded-3xl border border-[var(--tsuku-border)] bg-white p-6 text-center shadow-sm">
         <div className="rounded-full bg-[var(--tsuku-orange-light)] p-3 text-[var(--tsuku-orange)]">
           <ScanLine size={28} />
         </div>
-        <h1 className="mt-4 text-lg font-bold text-[var(--tsuku-text)]">カメラでQR読み取り</h1>
-        <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">管理者QRを読み込むと、該当会員にポイントを付与します。</p>
+        <h1 className="mt-4 text-lg font-bold text-[var(--tsuku-text)]">会員管理QR</h1>
+        <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">会員QRを読み取ると、管理メニューからポイント操作ができます。</p>
 
-        <div className="mt-5 w-full overflow-hidden rounded-3xl border border-stone-200 bg-black">
-          <video ref={videoRef} className="h-[320px] w-full object-cover" muted playsInline />
-        </div>
+        {!selectedProfile && (
+          <>
+            <div className="mt-5 w-full overflow-hidden rounded-3xl border border-stone-200 bg-black">
+              <video ref={videoRef} className="h-[320px] w-full object-cover" muted playsInline />
+            </div>
+            <div className="mt-4 text-sm font-semibold text-[var(--tsuku-orange-dark)]">{status}</div>
+          </>
+        )}
 
-        <div className="mt-4 text-sm font-semibold text-[var(--tsuku-orange-dark)]">
-          {status}
-        </div>
+        {selectedProfile && (
+          <div className="w-full space-y-4 text-left">
+            <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
+              <p className="text-sm text-[var(--tsuku-text-muted)]">会員ID</p>
+              <p className="mt-1 text-base font-semibold text-[var(--tsuku-text)]">{selectedProfile.id}</p>
+              <p className="mt-3 text-sm text-[var(--tsuku-text-muted)]">表示名</p>
+              <p className="mt-1 text-base font-semibold text-[var(--tsuku-text)]">{selectedProfile.display_name}</p>
+              {selectedProfile.username && (
+                <>
+                  <p className="mt-3 text-sm text-[var(--tsuku-text-muted)]">ユーザーネーム</p>
+                  <p className="mt-1 text-base font-semibold text-[var(--tsuku-text)]">@{selectedProfile.username}</p>
+                </>
+              )}
+              <p className="mt-3 text-sm text-[var(--tsuku-text-muted)]">現在のポイント</p>
+              <p className="mt-1 text-base font-semibold text-[var(--tsuku-text)]">{selectedProfile.points ?? 0} pt</p>
+            </div>
+
+            <div className="rounded-3xl border border-stone-200 bg-white p-4">
+              <label className="text-sm font-semibold text-[var(--tsuku-text)]">操作ポイント</label>
+              <input
+                type="number"
+                min={0}
+                value={operateAmount}
+                onChange={(e) => setOperateAmount(Number(e.target.value))}
+                className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-base"
+              />
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <button
+                  onClick={addPoints}
+                  className="rounded-2xl bg-[var(--tsuku-orange-light)] px-3 py-3 text-sm font-semibold text-[var(--tsuku-orange-dark)]"
+                >
+                  追加
+                </button>
+                <button
+                  onClick={setPoints}
+                  className="rounded-2xl bg-[var(--tsuku-orange-light)] px-3 py-3 text-sm font-semibold text-[var(--tsuku-orange-dark)]"
+                >
+                  設定
+                </button>
+                <button
+                  onClick={resetPoints}
+                  className="rounded-2xl bg-[var(--tsuku-border)] px-3 py-3 text-sm font-semibold text-[var(--tsuku-text)]"
+                >
+                  0にリセット
+                </button>
+              </div>
+              {actionStatus && (
+                <p className="mt-3 text-sm text-[var(--tsuku-text-muted)]">{actionStatus}</p>
+              )}
+            </div>
+
+            <button
+              onClick={restartScan}
+              className="mt-2 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-[var(--tsuku-text)]"
+            >
+              別のQRを読み取る
+            </button>
+          </div>
+        )}
 
         {authorized === false && (
           <div className="mt-4 rounded-2xl bg-stone-50 p-4 text-sm text-[var(--tsuku-text-muted)]">
@@ -171,8 +282,8 @@ export default function ScanPageClient() {
           </div>
         )}
 
-        {authorized && (
-          <div className="mt-3 text-xs text-[var(--tsuku-text-muted)]">QRコードは会員ページの「あなたの会員QR」で発行されたURL形式を読み取る必要があります。</div>
+        {authorized && !selectedProfile && (
+          <div className="mt-3 text-xs text-[var(--tsuku-text-muted)]">会員QRをかざして読み取ってください。</div>
         )}
       </div>
     </PageShell>
