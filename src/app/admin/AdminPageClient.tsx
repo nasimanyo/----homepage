@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { CalendarDays, Bell, Plus, X, ChevronLeft, Loader2, CheckCircle2, Trash2, QrCode, Sparkles, ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import QRCode from 'qrcode'
 import { Poll, Profile } from '@/types'
 import { PageShell } from '@/components/ui/PageShell'
 
@@ -27,7 +26,6 @@ export default function AdminPageClient() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<Profile[]>([])
-  const [qrCodes, setQrCodes] = useState<Record<string, string>>({})
   const [grantAmounts, setGrantAmounts] = useState<Record<string, number>>({})
   const [grantingMemberId, setGrantingMemberId] = useState<string | null>(null)
   const [pollTitle, setPollTitle] = useState('')
@@ -87,14 +85,6 @@ export default function AdminPageClient() {
 
     const nextMembers = (data as Profile[]) || []
     setMembers(nextMembers)
-
-    if (typeof window !== 'undefined') {
-      for (const member of nextMembers) {
-        const targetUrl = `${window.location.origin}/scan?memberId=${member.id}&amount=1`
-        const dataUrl = await QRCode.toDataURL(targetUrl, { width: 220, margin: 1 })
-        setQrCodes(prev => ({ ...prev, [member.id]: dataUrl }))
-      }
-    }
   }
 
   async function tryAdminPassword(event?: FormEvent<HTMLFormElement>) {
@@ -148,7 +138,8 @@ export default function AdminPageClient() {
       return
     }
 
-    const amount = grantAmounts[memberId] ?? 1
+    const rawAmount = grantAmounts[memberId]
+    const amount = Number.isInteger(rawAmount) && rawAmount > 0 ? rawAmount : 1
     const nextPoints = (targetProfile.points ?? 0) + amount
     await supabase.from('profiles').update({ points: nextPoints }).eq('id', memberId)
     setMembers(prev => prev.map(member => member.id === memberId ? { ...member, points: nextPoints } : member))
@@ -425,55 +416,49 @@ export default function AdminPageClient() {
             <div className="tsuku-card p-4">
               <div className="flex items-center gap-2">
                 <QrCode size={16} className="text-[var(--tsuku-orange)]" />
-                <h3 className="text-sm font-bold text-[var(--tsuku-text)]">会員ごとのQRコード</h3>
+                <h3 className="text-sm font-bold text-[var(--tsuku-text)]">会員QRでポイント付与</h3>
               </div>
-              <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">QRを読み込むと、その会員に1ポイントを付与できます。</p>
+              <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">QRコードを一覧で表示せず、カメラで読み取ってポイントを付与します。</p>
+              <div className="mt-4">
+                <a href="/scan" className="inline-flex items-center justify-center rounded-xl bg-[var(--tsuku-orange-light)] px-4 py-2 text-sm font-semibold text-[var(--tsuku-orange-dark)]">
+                  <QrCode size={16} className="mr-2" /> カメラで読み取る
+                </a>
+              </div>
             </div>
-            {members.map(member => (
-              <div key={member.id} className="tsuku-card p-4">
-                <div className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-bold text-[var(--tsuku-text)]">{member.display_name}</p>
-                  {member.username && (
-                    <p className="text-xs text-[var(--tsuku-text-muted)]">@{member.username}</p>
-                  )}
-                  <div className="mt-1 flex items-center gap-2 text-xs text-[var(--tsuku-text-muted)]">
-                    <Sparkles size={12} className="text-[var(--tsuku-orange)]" />
-                    <span>{member.points ?? 0} pt</span>
+            <div className="space-y-2">
+              {members.map(member => (
+                <div key={member.id} className="tsuku-card p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold text-[var(--tsuku-text)]">{member.display_name}</p>
+                      {member.username && (
+                        <p className="text-xs text-[var(--tsuku-text-muted)]">@{member.username}</p>
+                      )}
+                      <div className="mt-1 flex items-center gap-2 text-xs text-[var(--tsuku-text-muted)]">
+                        <Sparkles size={12} className="text-[var(--tsuku-orange)]" />
+                        <span>{member.points ?? 0} pt</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={grantAmounts[member.id] ?? 1}
+                        onChange={(e) => setGrantAmounts(prev => ({ ...prev, [member.id]: Number(e.target.value) }))}
+                        className="w-24 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-[var(--tsuku-text)]"
+                      />
+                      <button
+                        onClick={() => grantMemberPoints(member.id)}
+                        disabled={grantingMemberId === member.id}
+                        className="rounded-xl bg-[var(--tsuku-orange-light)] px-3 py-2 text-xs font-semibold text-[var(--tsuku-orange-dark)]"
+                      >
+                        {grantingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : '付与'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={grantAmounts[member.id] ?? 1}
-                    onChange={(e) => setGrantAmounts(prev => ({ ...prev, [member.id]: Number(e.target.value) }))}
-                    className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-[var(--tsuku-text)]"
-                  >
-                    {[1, 5, 10, 20].map((amount) => (
-                      <option key={amount} value={amount}>{amount} pt</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => grantMemberPoints(member.id)}
-                    disabled={grantingMemberId === member.id}
-                    className="rounded-xl bg-[var(--tsuku-orange-light)] px-3 py-2 text-xs font-semibold text-[var(--tsuku-orange-dark)]"
-                  >
-                    {grantingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : '付与'}
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
-                <div className="mt-4 flex justify-center rounded-2xl bg-stone-50 p-4">
-                  {qrCodes[member.id] ? (
-                    <img src={qrCodes[member.id]} alt={`${member.display_name}のQRコード`} className="h-44 w-44 rounded-xl" />
-                  ) : (
-                    <div className="flex h-44 w-44 items-center justify-center rounded-xl bg-white">
-                      <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={24} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </main>
