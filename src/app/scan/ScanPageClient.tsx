@@ -18,10 +18,11 @@ export default function ScanPageClient() {
   useEffect(() => {
     if (!supabase) return
 
+    const client = supabase
     let isMounted = true
 
     async function initCamera() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await client.auth.getUser()
       if (!user) {
         if (!isMounted) return
         setStatus('ログインが必要です')
@@ -29,7 +30,7 @@ export default function ScanPageClient() {
         return
       }
 
-      const { data: profileData } = await supabase
+      const { data: profileData } = await client
         .from('profiles')
         .select('is_admin')
         .eq('id', user.id)
@@ -48,16 +49,17 @@ export default function ScanPageClient() {
       setStatus('QRコードを読み取るとポイントが付与されます。')
 
       try {
-        const QrScanner = (await import('qr-scanner')).default
-        QrScanner.WORKER_PATH = '/qr-scanner-worker.min.js'
+        const QrScanner = await import('qr-scanner')
+        // @ts-ignore: qr-scanner default import typing is inconsistent with runtime
+        QrScanner.default.WORKER_PATH = '/qr-scanner-worker.min.js'
         if (!videoRef.current) {
           setStatus('カメラが見つかりません')
           return
         }
 
-        const scanner = new QrScanner(
+        const scanner = new QrScanner.default(
           videoRef.current,
-          async (result: string) => {
+          async (result: any) => {
             if (processing) return
             setProcessing(true)
             const parsed = parseScanUrl(result)
@@ -71,7 +73,7 @@ export default function ScanPageClient() {
             setStatus('読み取り成功。ポイント付与中...')
             scanner.stop()
 
-            const { data: targetProfile, error: profileError } = await supabase
+            const { data: targetProfile, error: profileError } = await client
               .from('profiles')
               .select('points')
               .eq('id', memberId)
@@ -85,7 +87,7 @@ export default function ScanPageClient() {
             }
 
             const nextPoints = (targetProfile.points ?? 0) + amount
-            const { error: updateError } = await supabase
+            const { error: updateError } = await client
               .from('profiles')
               .update({ points: nextPoints })
               .eq('id', memberId)
