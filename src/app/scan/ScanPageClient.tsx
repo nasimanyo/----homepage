@@ -82,7 +82,7 @@ export default function ScanPageClient() {
 
             const { data: targetProfile, error: profileError } = await client
               .from('profiles')
-              .select('id, username, display_name, points, is_admin, created_at')
+              .select('id, username, display_name, avatar_url, points, last_login_bonus_date, last_roulette_date, is_admin, created_at')
               .eq('id', memberId)
               .maybeSingle()
 
