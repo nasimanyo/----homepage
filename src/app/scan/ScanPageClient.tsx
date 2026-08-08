@@ -11,7 +11,13 @@ export default function ScanPageClient() {
   const searchParams = useSearchParams()
   const supabase = typeof window === 'undefined' ? null : createClient()
   const memberId = searchParams.get('memberId')
+  const amountParam = searchParams.get('amount')
   const [status, setStatus] = useState('読み取り中...')
+
+  const amount = useMemo(() => {
+    const parsed = Number(amountParam)
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
+  }, [amountParam])
 
   const canProcess = useMemo(() => Boolean(memberId), [memberId])
 
@@ -53,9 +59,9 @@ export default function ScanPageClient() {
         return
       }
 
-      const nextPoints = (targetProfile.points ?? 0) + 1
+      const nextPoints = (targetProfile.points ?? 0) + amount
       await supabase.from('profiles').update({ points: nextPoints }).eq('id', memberId)
-      setStatus('ポイントを付与しました')
+      setStatus(`${amount}ポイントを付与しました`)
       setTimeout(() => router.push('/admin?tab=members'), 800)
     }
 
@@ -69,7 +75,7 @@ export default function ScanPageClient() {
           <ScanLine size={28} />
         </div>
         <h1 className="mt-4 text-lg font-bold text-[var(--tsuku-text)]">QR読み取り</h1>
-        <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">会員のQRコードを読み込んでポイントを付与します。</p>
+        <p className="mt-2 text-sm text-[var(--tsuku-text-muted)]">会員のQRコードを読み込んでポイントを付与します。({amount}pt)</p>
         <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-[var(--tsuku-orange-dark)]">
           <Loader2 className="animate-spin" size={18} />
           {status}

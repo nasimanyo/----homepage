@@ -7,6 +7,7 @@
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,
+  username text unique,
   avatar_url text,
   points int not null default 0,
   last_login_bonus_date date,
@@ -15,10 +16,12 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
--- 既存DB向け: ポイント列が無い場合に追加
+-- 既存DB向け: ユーザーネーム列とポイント列が無い場合に追加
+alter table profiles add column if not exists username text;
 alter table profiles add column if not exists points int not null default 0;
 alter table profiles add column if not exists last_login_bonus_date date;
 alter table profiles add column if not exists last_roulette_date date;
+create unique index if not exists profiles_username_key on profiles(username);
 
 -- ② お知らせ（ホーム上部フィード）
 create table if not exists announcements (

@@ -6,6 +6,7 @@ import { Profile } from '@/types'
 import { LogOut, Settings, ShieldCheck, Loader2, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import QRCode from 'qrcode'
 import { AppHeader } from '@/components/ui/AppHeader'
 import { Mascot } from '@/components/ui/Mascot'
 import { PageShell } from '@/components/ui/PageShell'
@@ -15,6 +16,7 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [qrCode, setQrCode] = useState<string | null>(null)
   const router = useRouter()
   const supabase = typeof window === 'undefined' ? null : createClient()
 
@@ -44,6 +46,7 @@ export default function MyPage() {
           .from('profiles')
           .insert({
             id: user.id,
+            username: defaultName,
             display_name: defaultName,
             points: 0,
             last_login_bonus_date: null,
@@ -67,6 +70,17 @@ export default function MyPage() {
       setLoading(false)
     })
   }, [router, supabase])
+
+  useEffect(() => {
+    if (!supabase || !profile) return
+    const currentProfile = profile
+    async function generateQr() {
+      const targetUrl = `${window.location.origin}/scan?memberId=${currentProfile.id}`
+      const dataUrl = await QRCode.toDataURL(targetUrl, { width: 220, margin: 1 })
+      setQrCode(dataUrl)
+    }
+    generateQr()
+  }, [profile, supabase])
 
   async function saveName() {
     if (!profile || !editName.trim() || !supabase) return
@@ -121,9 +135,21 @@ export default function MyPage() {
                 <p className="mt-2 break-words text-[var(--tsuku-text)]">{profile?.display_name || '-'}</p>
               </div>
               <div className="rounded-2xl bg-stone-50 p-4 text-sm text-[var(--tsuku-text-muted)]">
-                <p className="font-semibold text-[var(--tsuku-text)]">操作</p>
-                <p className="mt-2">ここから表示名の変更やログアウトができます。</p>
+                <p className="font-semibold text-[var(--tsuku-text)]">ユーザーネーム</p>
+                <p className="mt-2 break-words text-[var(--tsuku-text)]">@{profile?.username || '------'}</p>
               </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center gap-3">
+            <p className="text-sm font-semibold text-[var(--tsuku-text)]">あなたの会員QR</p>
+            <div className="rounded-3xl border border-[var(--tsuku-border)] bg-stone-50 p-4">
+              {qrCode ? (
+                <img src={qrCode} alt="あなたのQRコード" className="h-44 w-44 rounded-xl" />
+              ) : (
+                <div className="flex h-44 w-44 items-center justify-center rounded-xl bg-white">
+                  <Loader2 className="animate-spin text-[var(--tsuku-orange)]" size={24} />
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-center">

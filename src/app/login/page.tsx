@@ -13,7 +13,7 @@ type Mode = 'login' | 'signup'
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,6 +31,14 @@ export default function LoginPage() {
       return
     }
 
+    const normalizedUsername = username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '_')
+    if (!normalizedUsername) {
+      setError('ユーザーネームを入力してください')
+      setLoading(false)
+      return
+    }
+    const authEmail = `${normalizedUsername}@tsuku.local`
+
     if (mode === 'signup') {
       if (!displayName.trim()) {
         setError('表示名を入力してください')
@@ -38,7 +46,7 @@ export default function LoginPage() {
         return
       }
 
-      const { data, error: signupErr } = await supabase.auth.signUp({ email, password })
+      const { data, error: signupErr } = await supabase.auth.signUp({ email: authEmail, password })
       if (signupErr) {
         setError(signupErr.message)
         setLoading(false)
@@ -48,6 +56,7 @@ export default function LoginPage() {
       if (data.user) {
         await supabase.from('profiles').insert({
           id: data.user.id,
+          username: normalizedUsername,
           display_name: displayName,
           points: 0,
           last_login_bonus_date: null,
@@ -56,9 +65,9 @@ export default function LoginPage() {
       }
       router.push('/home')
     } else {
-      const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password })
+      const { error: loginErr } = await supabase.auth.signInWithPassword({ email: authEmail, password })
       if (loginErr) {
-        setError('メールアドレスまたはパスワードが間違っています')
+        setError('ユーザーネームまたはパスワードが間違っています')
         setLoading(false)
         return
       }
@@ -69,7 +78,7 @@ export default function LoginPage() {
   }
 
   const canSubmit =
-    email &&
+    username.trim() &&
     password &&
     (mode === 'login' || displayName.trim())
 
@@ -93,12 +102,12 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[var(--tsuku-text-muted)]">mail:</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[var(--tsuku-text-muted)]">username:</label>
             <input
-              type="email"
-              placeholder="example@mail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="tsuku-input"
             />
           </div>

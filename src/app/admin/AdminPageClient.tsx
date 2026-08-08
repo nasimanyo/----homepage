@@ -28,6 +28,7 @@ export default function AdminPageClient() {
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<Profile[]>([])
   const [qrCodes, setQrCodes] = useState<Record<string, string>>({})
+  const [grantAmounts, setGrantAmounts] = useState<Record<string, number>>({})
   const [grantingMemberId, setGrantingMemberId] = useState<string | null>(null)
   const [pollTitle, setPollTitle] = useState('')
   const [pollDesc, setPollDesc] = useState('')
@@ -81,7 +82,7 @@ export default function AdminPageClient() {
     if (!supabase) return
     const { data } = await supabase
       .from('profiles')
-      .select('id, display_name, points, is_admin, created_at')
+      .select('id, username, display_name, points, is_admin, created_at')
       .order('created_at', { ascending: false })
 
     const nextMembers = (data as Profile[]) || []
@@ -89,7 +90,7 @@ export default function AdminPageClient() {
 
     if (typeof window !== 'undefined') {
       for (const member of nextMembers) {
-        const targetUrl = `${window.location.origin}/scan?memberId=${member.id}`
+        const targetUrl = `${window.location.origin}/scan?memberId=${member.id}&amount=1`
         const dataUrl = await QRCode.toDataURL(targetUrl, { width: 220, margin: 1 })
         setQrCodes(prev => ({ ...prev, [member.id]: dataUrl }))
       }
@@ -147,11 +148,12 @@ export default function AdminPageClient() {
       return
     }
 
-    const nextPoints = (targetProfile.points ?? 0) + 1
+    const amount = grantAmounts[memberId] ?? 1
+    const nextPoints = (targetProfile.points ?? 0) + amount
     await supabase.from('profiles').update({ points: nextPoints }).eq('id', memberId)
     setMembers(prev => prev.map(member => member.id === memberId ? { ...member, points: nextPoints } : member))
     setGrantingMemberId(null)
-    alert('1ポイントを付与しました')
+    alert(`${amount}ポイントを付与しました`)
   }
 
   async function createPoll() {
@@ -429,22 +431,38 @@ export default function AdminPageClient() {
             </div>
             {members.map(member => (
               <div key={member.id} className="tsuku-card p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-bold text-[var(--tsuku-text)]">{member.display_name}</p>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-[var(--tsuku-text-muted)]">
-                      <Sparkles size={12} className="text-[var(--tsuku-orange)]" />
-                      <span>{member.points ?? 0} pt</span>
-                    </div>
+                <div className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-bold text-[var(--tsuku-text)]">{member.display_name}</p>
+                  {member.username && (
+                    <p className="text-xs text-[var(--tsuku-text-muted)]">@{member.username}</p>
+                  )}
+                  <div className="mt-1 flex items-center gap-2 text-xs text-[var(--tsuku-text-muted)]">
+                    <Sparkles size={12} className="text-[var(--tsuku-orange)]" />
+                    <span>{member.points ?? 0} pt</span>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={grantAmounts[member.id] ?? 1}
+                    onChange={(e) => setGrantAmounts(prev => ({ ...prev, [member.id]: Number(e.target.value) }))}
+                    className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-[var(--tsuku-text)]"
+                  >
+                    {[1, 5, 10, 20].map((amount) => (
+                      <option key={amount} value={amount}>{amount} pt</option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => grantMemberPoints(member.id)}
                     disabled={grantingMemberId === member.id}
                     className="rounded-xl bg-[var(--tsuku-orange-light)] px-3 py-2 text-xs font-semibold text-[var(--tsuku-orange-dark)]"
                   >
-                    {grantingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : 'ポイント付与'}
+                    {grantingMemberId === member.id ? <Loader2 size={14} className="animate-spin" /> : '付与'}
                   </button>
                 </div>
+              </div>
+            </div>
                 <div className="mt-4 flex justify-center rounded-2xl bg-stone-50 p-4">
                   {qrCodes[member.id] ? (
                     <img src={qrCodes[member.id]} alt={`${member.display_name}のQRコード`} className="h-44 w-44 rounded-xl" />
